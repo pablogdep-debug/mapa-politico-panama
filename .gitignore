@@ -1,0 +1,33 @@
+# Entornos virtuales y cachés de Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secretos y configuración privada
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.key
+
+# Archivos temporales y capturas de verificación
+tmp/
+screenshots/
+political_preview.png
+informe-*.png
+plano-*.png
+
+# Archivos internos de Codex y herramientas locales
+.agents/
+.codex/
+
+# Archivos del sistema y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
