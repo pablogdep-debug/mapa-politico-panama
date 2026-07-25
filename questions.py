@@ -8,99 +8,99 @@ Este archivo solo guarda datos. Los cálculos se agregarán en otra etapa.
 QUESTIONS = [
     {
         "id": "q01",
-        "text": "Las decisiones del gobierno deberían basarse primero en la ciencia, aunque choquen con algunas costumbres o creencias religiosas.",
+        "text": "La ciencia puede ayudar a resolver problemas técnicos y debería tener un peso importante en las decisiones de política pública, incluso cuando sus conclusiones no coincidan con la opinión de quienes viven en los lugares donde esas decisiones se aplican.",
     },
     {
         "id": "q02",
-        "text": "Para mí, un buen político es alguien que resuelve problemas concretos para su gente.",
+        "text": "Un buen político es quien resuelve problemas concretos para su gente, aunque no siempre impulse grandes reformas.",
     },
     {
         "id": "q03",
-        "text": "Todas las familias deberían tener los mismos derechos, aunque no sean una familia tradicional.",
+        "text": "Todas las familias, ya sean de padres heterosexuales u homosexuales, deberían recibir los mismos derechos y el mismo reconocimiento por parte del Estado.",
     },
     {
         "id": "q04",
-        "text": "En los lugares peligrosos, lo primero debe ser recuperar el orden, aunque algunas medidas sean fuertes.",
+        "text": "En comunidades con altos niveles de violencia, recuperar el orden debe ser la prioridad, incluso antes de resolver otros problemas sociales.",
     },
     {
         "id": "q05",
-        "text": "Yo podría votar por personas de distintos partidos, dependiendo de quién me parezca más capaz.",
+        "text": "No tendría problema en votar por candidatos de distintos partidos si considero que son las personas más capaces.",
     },
     {
         "id": "q06",
-        "text": "La gente y las empresas funcionarían mejor sin que el gobierno estuviera diciéndoles todo el tiempo qué pueden o no pueden hacer.",
+        "text": "Mientras menos intervenga el gobierno en la economía, ya sea con subsidios, incentivos o controles de precios, mayores serán las oportunidades para las personas y las empresas.",
     },
     {
         "id": "q07",
-        "text": "Dar puestos o contratos a amigos del partido le hace daño al país, aunque esas personas hayan trabajado por el político.",
+        "text": "Las instituciones del Estado deberían valorar más las capacidades de las personas y los resultados de sus buenas ideas que los compromisos políticos adquiridos con donantes o durante las campañas.",
     },
     {
         "id": "q08",
-        "text": "Las leyes y lo que se enseña en las escuelas deberían tomar en cuenta los valores religiosos y las costumbres de Panamá.",
+        "text": "Las leyes y la educación también deberían reflejar los valores culturales y religiosos que forman parte de la identidad panameña.",
     },
     {
         "id": "q09",
-        "text": "La delincuencia se reduce mejor dando más educación, trabajo, deporte y oportunidades en los barrios.",
+        "text": "La mejor forma de reducir la delincuencia es invertir más en educación, empleo, deporte y oportunidades para los jóvenes.",
     },
     {
         "id": "q10",
-        "text": "Es normal apoyar a un político que ayuda a conseguir trabajo, becas, contratos o soluciones para la gente que lo respalda.",
+        "text": "Si un político demuestra que ayuda realmente a su comunidad, me parece razonable apoyarlo nuevamente con mi voto, ya sea que busque la reelección o aspire a otro cargo.",
     },
     {
         "id": "q11",
-        "text": "Ningún partido debería recibir el voto para siempre; cada candidato tiene que ganárselo.",
+        "text": "Ningún partido debería contar con mi voto por costumbre; cada elección debe ganarse nuevamente.",
     },
     {
         "id": "q12",
-        "text": "Hay momentos en que el gobierno tiene que poner reglas claras para evitar abusos y proteger a la mayoría.",
+        "text": "Hay situaciones en las que el gobierno debe intervenir para proteger a la población, aunque eso implique más regulaciones.",
     },
     {
         "id": "q13",
-        "text": "El gobierno debería defender especialmente la familia formada por un hombre, una mujer y sus hijos.",
+        "text": "Aunque existan distintos modelos de familia, el Estado debería dar un reconocimiento especial a la familia tradicional.",
     },
     {
         "id": "q14",
-        "text": "Para bajar la delincuencia, la policía necesita más presencia en las calles y más libertad para actuar con firmeza.",
+        "text": "Para enfrentar la delincuencia, la policía necesita contar con mayor autoridad y libertad para actuar con firmeza.",
     },
     {
         "id": "q15",
-        "text": "Panamá debería aceptar nuevas tecnologías y nuevas ideas, aunque eso cambie algunas formas antiguas de hacer las cosas.",
+        "text": "Panamá debería adoptar nuevas tecnologías e innovaciones con rapidez, aunque eso transforme formas tradicionales de hacer las cosas o deje sin empleo a algunas personas.",
     },
     {
         "id": "q16",
-        "text": "Los puestos y contratos del gobierno deberían dárselos a los más preparados, aunque no tengan contactos políticos.",
+        "text": "Los puestos y contratos del Estado deberían asignarse a las personas más capaces y mejor preparadas, aunque no tengan contactos políticos.",
     },
     {
         "id": "q17",
-        "text": "Cuando alguien se identifica con un partido, debería seguir apoyándolo aunque no le gusten todos sus candidatos.",
+        "text": "Cuando un partido representa bien mis ideas, considero importante mantenerle la lealtad aunque no me convenzan todos sus candidatos.",
     },
     {
         "id": "q18",
-        "text": "El gobierno no debería meterse en cómo los adultos deciden vivir su vida, formar pareja o crear una familia.",
+        "text": "Mientras no hagan daño a otras personas, el Estado no debería intervenir en las decisiones personales sobre cómo vivir, formar pareja o construir una familia.",
     },
     {
         "id": "q19",
-        "text": "El gobierno debería cobrar menos impuestos y poner menos trámites, aunque también pueda ofrecer menos ayudas y servicios.",
+        "text": "Prefiero pagar menos impuestos, aunque eso signifique que el Estado ofrezca menos servicios y ayudas.",
     },
     {
         "id": "q20",
-        "text": "Para avanzar como país, no deberíamos dejar de lado nuestras tradiciones religiosas y culturales.",
+        "text": "El progreso del país no debería lograrse sacrificando nuestras tradiciones culturales y religiosas.",
     },
     {
         "id": "q21",
-        "text": "Darle demasiado poder a la policía puede terminar en abusos contra gente inocente.",
+        "text": "Dar demasiado poder a las fuerzas de seguridad puede terminar afectando los derechos de personas inocentes.",
     },
     {
         "id": "q22",
-        "text": "Vale la pena pagar más impuestos si eso sirve para mejorar la educación, la salud y las ayudas para quienes más lo necesitan.",
+        "text": "Estoy dispuesto a pagar más impuestos si eso mejora de forma clara la educación, la salud y otros servicios públicos.",
     },
     {
         "id": "q23",
-        "text": "Hay valores morales que deberían protegerse por ley, aunque no todo el mundo esté de acuerdo.",
+        "text": "Existen valores morales fundamentales que las leyes deberían proteger, aunque no toda la sociedad esté de acuerdo.",
     },
     {
         "id": "q24",
-        "text": "Es importante mantenerse fiel a un partido, incluso cuando está pasando por un mal momento.",
+        "text": "Los partidos políticos fuertes son importantes porque dan estabilidad y continuidad a los proyectos del país.",
     },
 ]
 
