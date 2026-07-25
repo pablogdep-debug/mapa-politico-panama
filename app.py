@@ -1,25 +1,49 @@
 """Aplicación de Brújula Política de Panamá."""
 
+import base64
 import html
+import json
 import re
 import time
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import streamlit as st
+import streamlit.components.v1 as components
 
 from interpretations import classify_position, describe
 from nuances import build_nuance_bar
 from plotting import create_map, create_social_map
 from questions import QUESTIONS
 from scoring import calculate_scores
+from shared_results import (
+    build_share_url,
+    build_social_message,
+    decode_result,
+    facebook_share_url,
+    whatsapp_share_url,
+)
 from social import classify_social_position, describe_social
 
 
 st.set_page_config(
-    page_title="Brújula Política de Panamá",
-    page_icon="🧭",
+    page_title="Brújula Democrática",
+    page_icon="assets/brujula.png",
     layout="wide",
 )
+
+PUBLIC_APP_URL = "https://brujula-politica-panama.streamlit.app"
+LOGO_PATH = Path("assets/brujula.png")
+LOGO_ALT = (
+    "Brújula Democrática — Movimiento de inteligencia participativa "
+    "informada por la ciencia en Panamá"
+)
+SOCIAL_LINKS = {
+    "pablo_instagram": "https://www.instagram.com/pablo.garciadeparedes/",
+    "mark_instagram": "https://www.instagram.com/markharricka/",
+    "brujula_instagram": "",
+    "brujula_facebook": "",
+}
 
 
 LIKERT_CHOICES = (
@@ -35,21 +59,23 @@ st.markdown(
     """
     <style>
     :root {
-        --compass-bg: #07111d;
-        --compass-panel: rgba(10, 20, 34, 0.94);
-        --compass-panel-soft: rgba(255, 255, 255, 0.035);
-        --compass-text: #f3f7fb;
-        --compass-muted: #94a4b8;
-        --compass-blue: #3b82f6;
-        --compass-cyan: #28d7c0;
+        --compass-bg: #e9edf2;
+        --compass-panel: #ffffff;
+        --compass-panel-soft: #f2f4f7;
+        --compass-text: #102a50;
+        --compass-muted: #526174;
+        --compass-blue: #0a438f;
+        --compass-cyan: #087f8c;
         --compass-violet: #8b5cf6;
-        --compass-magenta: #d946ef;
+        --compass-magenta: #b936c5;
+        --compass-border: #d8dee8;
+        --compass-shadow: 0 8px 28px rgba(16, 42, 80, 0.08);
     }
 
     .stApp {
         background:
-            radial-gradient(circle at 8% 0%, rgba(20, 120, 180, 0.12), transparent 35rem),
-            radial-gradient(circle at 96% 94%, rgba(150, 60, 220, 0.09), transparent 34rem),
+            radial-gradient(circle at 8% 0%, rgba(10, 67, 143, 0.07), transparent 35rem),
+            radial-gradient(circle at 96% 94%, rgba(139, 92, 246, 0.06), transparent 34rem),
             var(--compass-bg);
         color: var(--compass-text);
     }
@@ -66,11 +92,10 @@ st.markdown(
         width: min(100%, 820px);
         margin-inline: auto;
         padding: clamp(1.5rem, 4vw, 2.25rem);
-        border: 1px solid rgba(255, 255, 255, 0.10);
+        border: 1px solid var(--compass-border);
         border-radius: 24px;
         background: var(--compass-panel);
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-        backdrop-filter: blur(10px);
+        box-shadow: var(--compass-shadow);
     }
 
     .cover-shell,
@@ -89,41 +114,28 @@ st.markdown(
         padding: clamp(0.5rem, 3vw, 2rem) 0 1.4rem;
     }
 
-    .cover-mark {
-        width: 64px;
-        height: 64px;
-        display: grid;
-        place-items: center;
-        margin: 0 auto 1.5rem;
-        border: 1px solid rgba(72, 207, 255, 0.22);
-        border-radius: 20px;
-        background: linear-gradient(145deg, rgba(59, 130, 246, 0.16), rgba(139, 92, 246, 0.12));
-        box-shadow: 0 14px 34px rgba(24, 102, 174, 0.15);
-        font-size: 1.9rem;
+    [class*="st-key-cover_logo"] {
+        position: relative;
+        width: min(100%, 780px);
+        aspect-ratio: 2.05 / 1;
+        overflow: hidden;
+        margin: 0 auto 1.25rem;
     }
 
-    .cover-title {
-        max-width: 720px;
-        margin: 0 auto 1rem;
-        color: var(--compass-text);
-        font-size: clamp(2.15rem, 5vw, 3.5rem);
-        line-height: 1.08;
-        letter-spacing: -0.04em;
-        font-weight: 760;
-    }
-
-    .cover-gradient {
-        display: inline-block;
-        background: linear-gradient(100deg, #59a8ff 0%, #38dfcf 34%, #9b72ff 68%, #ef6adf 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
+    [class*="st-key-cover_logo"] img {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        transform: translateY(-50%);
     }
 
     .cover-copy {
         max-width: 660px;
         margin: 0 auto;
-        color: #b7c3d3;
+        color: var(--compass-muted);
         font-size: clamp(0.98rem, 2vw, 1.12rem);
         line-height: 1.62;
     }
@@ -140,10 +152,10 @@ st.markdown(
     .intro-card {
         min-height: 100%;
         padding: 1.2rem 1.15rem 1.25rem;
-        border: 1px solid rgba(255, 255, 255, 0.085);
+        border: 1px solid var(--compass-border);
         border-radius: 17px;
-        background: rgba(255, 255, 255, 0.024);
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.10);
+        background: var(--compass-panel-soft);
+        box-shadow: 0 10px 28px rgba(16, 42, 80, 0.06);
     }
 
     .intro-icon {
@@ -155,7 +167,7 @@ st.markdown(
         border: 1px solid rgba(72, 207, 255, 0.16);
         border-radius: 10px;
         background: rgba(59, 130, 246, 0.08);
-        color: #67d8cf;
+        color: var(--compass-blue);
     }
 
     .intro-icon svg {
@@ -171,7 +183,7 @@ st.markdown(
     .intro-card h2 {
         min-height: 2.45em;
         margin: 0 0 0.8rem;
-        color: #edf4fa;
+        color: var(--compass-text);
         font-size: 1.02rem;
         line-height: 1.22;
         letter-spacing: -0.01em;
@@ -179,7 +191,7 @@ st.markdown(
 
     .intro-card p {
         margin: 0 0 0.8rem;
-        color: #9dacc0;
+        color: var(--compass-muted);
         font-size: 0.84rem;
         line-height: 1.55;
     }
@@ -201,10 +213,10 @@ st.markdown(
         align-items: center;
         gap: 0.8rem;
         padding: 0.7rem 0.9rem;
-        border: 1px solid rgba(255, 255, 255, 0.07);
+        border: 1px solid var(--compass-border);
         border-radius: 13px;
-        background: rgba(255, 255, 255, 0.025);
-        color: #dbe5ef;
+        background: var(--compass-panel-soft);
+        color: var(--compass-text);
         font-size: 0.94rem;
     }
 
@@ -216,7 +228,7 @@ st.markdown(
 
     .privacy-note {
         margin: 0.9rem auto 0;
-        color: #7f90a5;
+        color: var(--compass-muted);
         font-size: 0.76rem;
         line-height: 1.45;
         text-align: center;
@@ -245,12 +257,12 @@ st.markdown(
         width: min(100%, 820px);
         margin: 2.2rem auto 1.4rem;
         padding: clamp(1.5rem, 4vw, 2.25rem);
-        border: 1px solid rgba(72, 207, 255, 0.14);
+        border: 1px solid var(--compass-border);
         border-radius: 24px;
         background:
-            radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.10), transparent 22rem),
-            rgba(10, 20, 34, 0.94);
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+            radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.07), transparent 22rem),
+            var(--compass-panel);
+        box-shadow: var(--compass-shadow);
     }
 
     .subscription-intro {
@@ -268,21 +280,21 @@ st.markdown(
 
     .subscription-copy {
         margin: 0 0 0.8rem;
-        color: #b7c3d3;
+        color: var(--compass-muted);
         line-height: 1.6;
     }
 
     [class*="st-key-subscription_card"] [data-testid="stTextInput"] label {
-        color: #e9f1f8;
+        color: var(--compass-text);
         font-weight: 650;
     }
 
     [class*="st-key-subscription_card"] [data-testid="stTextInput"] input {
         min-height: 52px;
-        border-color: rgba(255, 255, 255, 0.14);
+        border-color: var(--compass-border);
         border-radius: 13px;
-        background: rgba(255, 255, 255, 0.045);
-        color: white;
+        background: #fff;
+        color: var(--compass-text);
     }
 
     [class*="st-key-subscription_card"] form button {
@@ -296,7 +308,7 @@ st.markdown(
 
     .subscription-note {
         margin: 0.85rem 0 0;
-        color: #8495aa;
+        color: var(--compass-muted);
         font-size: 0.79rem;
         line-height: 1.5;
     }
@@ -307,7 +319,7 @@ st.markdown(
         justify-content: space-between;
         gap: 1rem;
         margin-bottom: 0.7rem;
-        color: #e8eef6;
+        color: var(--compass-text);
         font-size: 0.9rem;
         font-weight: 580;
     }
@@ -331,8 +343,8 @@ st.markdown(
         height: 9px;
         overflow: hidden;
         border-radius: 999px;
-        background: #1b2939;
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.32);
+        background: #dbe2ea;
+        box-shadow: inset 0 1px 2px rgba(16, 42, 80, 0.12);
     }
 
     .progress-fill {
@@ -362,12 +374,12 @@ st.markdown(
         justify-content: flex-start !important;
         margin-bottom: 0.32rem;
         padding: 0.85rem 1.1rem;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid var(--compass-border);
         border-left: 4px solid var(--answer-accent);
         border-radius: 16px;
-        background: rgba(255, 255, 255, 0.025);
+        background: #fff;
         box-shadow: inset 14px 0 32px -30px var(--answer-accent);
-        color: #eaf1f8;
+        color: var(--compass-text);
         font-size: 1rem;
         font-weight: 560;
         text-align: left;
@@ -407,17 +419,17 @@ st.markdown(
     [class*="st-key-answer_"] .stButton > button:hover {
         transform: translateY(-1px);
         border-color: color-mix(in srgb, var(--answer-accent) 58%, white 8%);
-        background: color-mix(in srgb, var(--answer-accent) 8%, rgba(255, 255, 255, 0.025));
+        background: color-mix(in srgb, var(--answer-accent) 8%, white);
         box-shadow: 0 8px 24px color-mix(in srgb, var(--answer-accent) 12%, transparent);
-        color: white;
+        color: var(--compass-text);
     }
 
     [class*="st-key-answer_"] .stButton > button[kind="primary"],
     [class*="st-key-answer_"] .stButton > button[data-testid="stBaseButton-primary"] {
         border-color: var(--answer-accent) !important;
-        background: color-mix(in srgb, var(--answer-accent) 13%, #0d1a29) !important;
+        background: color-mix(in srgb, var(--answer-accent) 13%, white) !important;
         box-shadow: 0 0 0 1px var(--answer-accent), 0 10px 26px color-mix(in srgb, var(--answer-accent) 17%, transparent);
-        color: white !important;
+        color: var(--compass-text) !important;
     }
 
     [class*="st-key-answer_"] .stButton > button:focus-visible {
@@ -447,9 +459,9 @@ st.markdown(
     }
 
     [class*="st-key-back_"] button {
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        background: #142131 !important;
-        color: #c9d4df !important;
+        border: 1px solid var(--compass-border) !important;
+        background: #fff !important;
+        color: var(--compass-text) !important;
     }
 
     [class*="st-key-next_"] button {
@@ -460,7 +472,7 @@ st.markdown(
     }
 
     [class*="st-key-next_"] button:disabled {
-        background: #1b2939 !important;
+        background: #dbe2ea !important;
         box-shadow: none;
         color: #69798c !important;
     }
@@ -501,16 +513,16 @@ st.markdown(
     }
 
     [class*="st-key-results_grid"] div[data-testid="stColumn"] {
-        background: rgba(10, 20, 34, 0.92);
-        border: 1px solid rgba(255, 255, 255, 0.10);
+        background: var(--compass-panel);
+        border: 1px solid var(--compass-border);
         border-radius: 20px;
         padding: clamp(1.15rem, 2.4vw, 1.55rem);
-        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+        box-shadow: var(--compass-shadow);
     }
 
     .result-plane-title {
         margin: 0 0 0.65rem;
-        color: #e7eef6;
+        color: var(--compass-text);
         font-size: clamp(1.2rem, 2.1vw, 1.45rem) !important;
         line-height: 1.28;
         letter-spacing: -0.02em;
@@ -518,7 +530,7 @@ st.markdown(
 
     .result-plane-summary {
         margin: 0 0 1.6rem;
-        color: #93a4b8;
+        color: var(--compass-muted);
         font-size: 0.9rem;
         line-height: 1.55;
     }
@@ -534,7 +546,7 @@ st.markdown(
 
     .result-profile {
         margin: 0 0 0.75rem;
-        color: #f7f9fc;
+        color: var(--compass-text);
         font-size: clamp(1.8rem, 3.3vw, 2.25rem) !important;
         line-height: 1.12;
         letter-spacing: -0.035em;
@@ -542,7 +554,7 @@ st.markdown(
 
     .result-interpretation {
         margin: 0 0 1rem;
-        color: #c4cfdb;
+        color: var(--compass-muted);
         font-size: 0.96rem;
         line-height: 1.62;
     }
@@ -553,10 +565,10 @@ st.markdown(
         gap: 0.35rem;
         margin: 0 0 1.8rem;
         padding: 0.5rem 0.72rem;
-        border: 1px solid rgba(255, 255, 255, 0.085);
+        border: 1px solid var(--compass-border);
         border-radius: 10px;
-        background: rgba(255, 255, 255, 0.03);
-        color: #aebccd;
+        background: var(--compass-panel-soft);
+        color: var(--compass-muted);
         font-size: 0.82rem;
         line-height: 1.35;
     }
@@ -564,25 +576,25 @@ st.markdown(
     .result-explainer {
         margin: 0 0 1.25rem;
         padding-top: 1.25rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.075);
+        border-top: 1px solid var(--compass-border);
     }
 
     .result-explainer h4 {
         margin: 0 0 0.55rem;
-        color: #dce6ef;
+        color: var(--compass-text);
         font-size: 0.96rem;
     }
 
     .result-explainer p {
         margin: 0;
-        color: #91a2b6;
+        color: var(--compass-muted);
         font-size: 0.85rem;
         line-height: 1.58;
     }
 
     .result-technical {
         margin: 0.65rem 0 0.2rem;
-        color: #718399;
+        color: var(--compass-muted);
         font-size: 0.72rem;
         line-height: 1.45;
         text-align: center;
@@ -596,10 +608,11 @@ st.markdown(
     }
 
     .nuance-card {
-        border: 1px solid rgba(255, 255, 255, 0.10);
+        border: 1px solid var(--compass-border);
         border-radius: 18px;
         padding: 1rem 1.1rem;
-        background: rgba(10, 20, 34, 0.92);
+        background: var(--compass-panel);
+        box-shadow: var(--compass-shadow);
     }
 
     .nuance-heading {
@@ -617,7 +630,7 @@ st.markdown(
         justify-content: space-between;
         gap: 1rem;
         font-size: 0.78rem;
-        color: #9eacbd;
+        color: var(--compass-muted);
     }
 
     .nuance-labels span:last-child { text-align: right; }
@@ -627,7 +640,7 @@ st.markdown(
         height: 10px;
         margin: 0.55rem 0 0.7rem;
         border-radius: 999px;
-        background: #1b2939;
+        background: #dbe2ea;
     }
 
     .nuance-zero {
@@ -660,8 +673,95 @@ st.markdown(
 
     .nuance-description {
         margin: 0;
-        color: #b7c3d2;
+        color: var(--compass-muted);
         font-size: 0.9rem;
+    }
+
+    .shared-banner,
+    .share-card,
+    .social-outro {
+        width: min(100%, 920px);
+        margin: 1.5rem auto;
+        padding: clamp(1.25rem, 3vw, 1.8rem);
+        border: 1px solid var(--compass-border);
+        border-radius: 20px;
+        background: var(--compass-panel);
+        box-shadow: var(--compass-shadow);
+    }
+
+    .shared-badge {
+        display: inline-block;
+        margin-bottom: 0.75rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 999px;
+        background: #e7effa;
+        color: var(--compass-blue);
+        font-size: 0.76rem;
+        font-weight: 760;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .shared-banner h1,
+    .share-card h2,
+    .social-outro h2 {
+        margin: 0 0 0.55rem;
+        color: var(--compass-text);
+        letter-spacing: -0.025em;
+    }
+
+    .shared-banner p,
+    .share-card p,
+    .social-outro p {
+        margin: 0.35rem 0;
+        color: var(--compass-muted);
+        line-height: 1.55;
+    }
+
+    .creator-links {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin: 1rem 0 1.35rem;
+    }
+
+    .creator-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 58px;
+        padding: 0.7rem 0.9rem;
+        border: 1px solid var(--compass-border);
+        border-radius: 13px;
+        background: var(--compass-panel-soft);
+        color: var(--compass-text) !important;
+        text-decoration: none !important;
+        transition: transform 140ms ease, border-color 140ms ease;
+    }
+
+    .creator-link:hover {
+        transform: translateY(-1px);
+        border-color: #9db2cf;
+    }
+
+    .creator-link:focus-visible {
+        outline: 3px solid rgba(10, 67, 143, 0.24);
+        outline-offset: 2px;
+    }
+
+    .creator-link strong,
+    .creator-link small { display: block; }
+    .creator-link small { color: var(--compass-muted); }
+    .coming-soon { font-size: 0.86rem; }
+
+    [class*="st-key-shared_cta_"] button {
+        min-height: 58px;
+        border: 0 !important;
+        border-radius: 15px;
+        background: linear-gradient(105deg, var(--compass-blue), var(--compass-violet)) !important;
+        color: white !important;
+        font-weight: 740;
+        white-space: normal;
     }
 
     @media (max-width: 900px) {
@@ -704,6 +804,14 @@ st.markdown(
         }
         .intro-card h2 {
             min-height: 0;
+        }
+
+        [class*="st-key-cover_logo"] {
+            width: 95%;
+        }
+
+        .creator-links {
+            grid-template-columns: 1fr;
         }
 
         .question-title {
@@ -772,6 +880,12 @@ def reset_questionnaire():
     st.session_state.answers = {}
     st.session_state.show_results = False
     st.session_state.analysis_complete = False
+
+
+def start_own_questionnaire():
+    """Sale de una vista compartida y prepara un recorrido completamente nuevo."""
+    reset_questionnaire()
+    st.query_params.clear()
 
 
 def is_valid_email(email):
@@ -852,16 +966,21 @@ def nuance_card_html(kind, value):
     )
 
 
+def logo_data_uri():
+    """Lee el logo local sin cambiar sus píxeles ni depender de una URL externa."""
+    encoded = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
 def render_cover():
     """Muestra la portada antes de revelar el cuestionario."""
     with st.container(key="cover_card"):
         st.markdown(
-            """
+            f"""
             <div class="cover-shell">
-                <div class="cover-mark" aria-hidden="true">🧭</div>
-                <h1 class="cover-title">
-                    Descubre tu <span class="cover-gradient">brújula política</span>
-                </h1>
+                <div class="st-key-cover_logo">
+                    <img src="{logo_data_uri()}" alt="{html.escape(LOGO_ALT)}">
+                </div>
                 <div class="cover-introduction">
                     <div class="intro-card">
                         <span class="intro-icon" aria-hidden="true">
@@ -1122,10 +1241,248 @@ def render_subscription():
             )
 
 
-def render_results():
-    """Reutiliza sin cambios la lógica existente de puntuación y resultados."""
-    numeric_answers = dict(st.session_state.answers)
-    scores = calculate_scores(numeric_answers)
+def render_shared_cta(key):
+    """Invita a iniciar un cuestionario propio desde un resultado de solo lectura."""
+    st.button(
+        (
+            "Completa tu cuestionario para ver dónde te ubicas tú "
+            "en la Brújula Democrática"
+        ),
+        on_click=start_own_questionnaire,
+        type="primary",
+        use_container_width=True,
+        key=f"shared_cta_{key}",
+    )
+
+
+def render_share_section(scores, political_name, social_name):
+    """Muestra exclusivamente WhatsApp, Facebook e Instagram para compartir."""
+    share_url = build_share_url(PUBLIC_APP_URL, scores)
+    message = build_social_message(political_name, social_name, share_url)
+    whatsapp_url = whatsapp_share_url(message)
+    facebook_url = facebook_share_url(share_url)
+
+    st.markdown(
+        """
+        <section class="share-card">
+            <h2>Comparte tu resultado</h2>
+            <p>
+                Comparte tu perfil con tus amigos y descubre si terminan cerca
+                de ti o en otro rincón de la Brújula Democrática.
+            </p>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    escaped_message = json.dumps(message, ensure_ascii=False)
+    escaped_url = json.dumps(share_url)
+    escaped_whatsapp = html.escape(whatsapp_url, quote=True)
+    escaped_facebook = html.escape(facebook_url, quote=True)
+    components.html(
+        f"""
+        <style>
+            * {{ box-sizing: border-box; }}
+            body {{
+                margin: 0;
+                color: #102a50;
+                font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+                    BlinkMacSystemFont, "Segoe UI", sans-serif;
+            }}
+            .share-actions {{
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 12px;
+            }}
+            .share-button {{
+                min-height: 54px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 12px 14px;
+                border: 1px solid #d8dee8;
+                border-radius: 13px;
+                color: #102a50;
+                background: #fff;
+                font-size: 15px;
+                font-weight: 720;
+                line-height: 1.2;
+                text-align: center;
+                text-decoration: none;
+                cursor: pointer;
+            }}
+            .whatsapp {{ border-color: #8bd9aa; background: #effbf4; }}
+            .facebook {{ border-color: #a9bee5; background: #f1f5fc; }}
+            .instagram {{ border-color: #d8b0d8; background: #fbf2fb; }}
+            .share-button:hover {{ filter: brightness(0.98); transform: translateY(-1px); }}
+            .share-button:focus-visible {{
+                outline: 3px solid rgba(10, 67, 143, 0.25);
+                outline-offset: 2px;
+            }}
+            .copy-button {{
+                display: block;
+                margin: 13px auto 0;
+                border: 0;
+                background: transparent;
+                color: #526174;
+                font: inherit;
+                font-size: 13px;
+                text-decoration: underline;
+                cursor: pointer;
+            }}
+            #share-status {{
+                min-height: 22px;
+                margin: 8px 0 0;
+                color: #526174;
+                font-size: 13px;
+                text-align: center;
+            }}
+            @media (max-width: 640px) {{
+                .share-actions {{ grid-template-columns: 1fr; }}
+                .share-button {{ min-height: 58px; }}
+            }}
+        </style>
+        <div class="share-actions">
+            <a class="share-button whatsapp" href="{escaped_whatsapp}"
+               target="_blank" rel="noopener noreferrer">
+                Compartir por WhatsApp
+            </a>
+            <a class="share-button facebook" href="{escaped_facebook}"
+               target="_blank" rel="noopener noreferrer">
+                Compartir en Facebook
+            </a>
+            <button class="share-button instagram" type="button"
+                    onclick="shareInstagram()">
+                Compartir en Instagram
+            </button>
+        </div>
+        <button class="copy-button" type="button" onclick="copyLink()">
+            Copiar enlace del resultado
+        </button>
+        <p id="share-status" role="status" aria-live="polite"></p>
+        <script>
+            const message = {escaped_message};
+            const shareUrl = {escaped_url};
+            const status = document.getElementById("share-status");
+
+            async function copyText(text) {{
+                try {{
+                    await navigator.clipboard.writeText(text);
+                }} catch (_) {{
+                    const area = document.createElement("textarea");
+                    area.value = text;
+                    area.style.position = "fixed";
+                    area.style.opacity = "0";
+                    document.body.appendChild(area);
+                    area.select();
+                    document.execCommand("copy");
+                    area.remove();
+                }}
+            }}
+
+            async function shareInstagram() {{
+                if (navigator.share) {{
+                    try {{
+                        await navigator.share({{
+                            title: "Mi resultado en Brújula Democrática",
+                            text: message,
+                            url: shareUrl
+                        }});
+                        status.textContent = "Elige Instagram para compartir tu resultado.";
+                        resizeFrame();
+                        return;
+                    }} catch (error) {{
+                        if (error && error.name === "AbortError") return;
+                    }}
+                }}
+                await copyText(message);
+                status.textContent =
+                    "Tu resultado fue copiado. Abre Instagram y pégalo en tu historia, publicación o mensaje.";
+                resizeFrame();
+            }}
+
+            async function copyLink() {{
+                await copyText(shareUrl);
+                status.textContent = "Enlace copiado.";
+                resizeFrame();
+            }}
+
+            function resizeFrame() {{
+                window.parent.postMessage({{
+                    isStreamlitMessage: true,
+                    type: "streamlit:setFrameHeight",
+                    height: document.documentElement.scrollHeight
+                }}, "*");
+            }}
+
+            new ResizeObserver(resizeFrame).observe(document.body);
+            resizeFrame();
+        </script>
+        """,
+        height=175,
+        scrolling=False,
+    )
+
+
+def render_social_outro():
+    """Muestra redes reales y oculta correctamente las cuentas aún inexistentes."""
+    official_links = []
+    if SOCIAL_LINKS["brujula_instagram"]:
+        official_links.append(
+            ("Instagram", SOCIAL_LINKS["brujula_instagram"])
+        )
+    if SOCIAL_LINKS["brujula_facebook"]:
+        official_links.append(
+            ("Facebook", SOCIAL_LINKS["brujula_facebook"])
+        )
+
+    official_html = "".join(
+        (
+            f'<a class="creator-link" href="{html.escape(url, quote=True)}" '
+            'target="_blank" rel="noopener noreferrer">'
+            f"<span><strong>{html.escape(name)}</strong>"
+            "<small>Brújula Democrática</small></span></a>"
+        )
+        for name, url in official_links
+    )
+    if not official_html:
+        official_html = (
+            '<p class="coming-soon">'
+            "Redes oficiales de Brújula Democrática — próximamente"
+            "</p>"
+        )
+
+    st.markdown(
+        f"""
+        <section class="social-outro">
+            <h2>Sigue el proyecto y a sus creadores</h2>
+            <p><strong>Creadores de Brújula Democrática</strong></p>
+            <div class="creator-links">
+                <a class="creator-link"
+                   href="{SOCIAL_LINKS["pablo_instagram"]}"
+                   target="_blank" rel="noopener noreferrer">
+                    <span aria-hidden="true">◎</span>
+                    <span><strong>Pablo García de Paredes</strong>
+                    <small>@pablo.garciadeparedes</small></span>
+                </a>
+                <a class="creator-link"
+                   href="{SOCIAL_LINKS["mark_instagram"]}"
+                   target="_blank" rel="noopener noreferrer">
+                    <span aria-hidden="true">◎</span>
+                    <span><strong>Mark Harricka</strong>
+                    <small>@markharricka</small></span>
+                </a>
+            </div>
+            <p><strong>Redes de Brújula Democrática</strong></p>
+            {official_html}
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_result_report(scores, shared=False):
+    """Dibuja el mismo informe para el participante o para un enlace compartido."""
 
     x = scores["x"]
     y = scores["y"]
@@ -1135,8 +1492,26 @@ def render_results():
     social_y = scores["modernidad"]
     social_classification = classify_social_position(social_x, social_y)
 
-    st.title("Tu perfil político panameño")
-    st.write("Dos planos para entender cómo ves al Estado, la política y la sociedad.")
+    if shared:
+        st.markdown(
+            """
+            <section class="shared-banner">
+                <span class="shared-badge">Resultado compartido</span>
+                <h1>Un amigo compartió contigo su resultado</h1>
+                <p>
+                    Explora su ubicación en la Brújula Democrática y luego
+                    descubre dónde te ubicas tú.
+                </p>
+            </section>
+            """,
+            unsafe_allow_html=True,
+        )
+        render_shared_cta("top")
+    else:
+        st.title("Tu perfil político panameño")
+        st.write(
+            "Dos planos para entender cómo ves al Estado, la política y la sociedad."
+        )
 
     with st.container(key="results_grid"):
         political_column, social_column = st.columns(2, gap="large")
@@ -1219,20 +1594,50 @@ def render_results():
         unsafe_allow_html=True,
     )
 
-    render_subscription()
+    if shared:
+        render_shared_cta("bottom")
+        render_social_outro()
+    else:
+        render_share_section(
+            scores,
+            classification["name"],
+            social_classification["name"],
+        )
+        render_subscription()
+        render_social_outro()
+        st.button(
+            "Volver a realizar el cuestionario",
+            on_click=reset_questionnaire,
+            type="primary",
+            use_container_width=True,
+            key="restart_button",
+        )
 
-    st.button(
-        "Volver a realizar el cuestionario",
-        on_click=reset_questionnaire,
-        type="primary",
-        use_container_width=True,
-        key="restart_button",
-    )
+
+def render_results():
+    """Calcula la sesión actual y delega su presentación sin alterar la fórmula."""
+    numeric_answers = dict(st.session_state.answers)
+    render_result_report(calculate_scores(numeric_answers))
+
+
+def shared_result_from_query():
+    """Obtiene un resultado compartido válido o limpia silenciosamente la URL."""
+    encoded = st.query_params.get("r")
+    if not encoded:
+        return None
+    result = decode_result(encoded)
+    if result is None:
+        st.query_params.clear()
+    return result
 
 
 initialize_state()
 
-if not st.session_state.started:
+shared_result = shared_result_from_query()
+
+if shared_result is not None:
+    render_result_report(shared_result, shared=True)
+elif not st.session_state.started:
     render_cover()
 elif not st.session_state.show_results:
     render_question()
