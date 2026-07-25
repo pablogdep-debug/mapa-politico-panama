@@ -129,30 +129,63 @@ st.markdown(
     }
 
     .cover-introduction {
-        max-width: 680px;
-        margin: 1.65rem auto 0;
-        color: #b7c3d3;
-        font-size: clamp(0.94rem, 1.8vw, 1.04rem);
-        line-height: 1.68;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.85rem;
+        max-width: 760px;
+        margin: 1.85rem auto 0;
         text-align: left;
     }
 
-    .cover-introduction p {
-        margin: 0 0 1rem;
+    .intro-card {
+        min-height: 100%;
+        padding: 1.2rem 1.15rem 1.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.085);
+        border-radius: 17px;
+        background: rgba(255, 255, 255, 0.024);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.10);
     }
 
-    .cover-introduction .intro-lead {
-        padding-left: 1rem;
-        border-left: 3px solid rgba(40, 215, 192, 0.72);
-        color: #e9f1f8;
-        font-size: 1.04em;
-        font-weight: 620;
+    .intro-icon {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(72, 207, 255, 0.16);
+        border-radius: 10px;
+        background: rgba(59, 130, 246, 0.08);
+        color: #67d8cf;
     }
 
-    .cover-introduction .intro-authors {
-        margin: 1.25rem 0 0;
-        color: #7f90a5;
-        font-size: 0.82rem;
+    .intro-icon svg {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 1.8;
+    }
+
+    .intro-card h2 {
+        min-height: 2.45em;
+        margin: 0 0 0.8rem;
+        color: #edf4fa;
+        font-size: 1.02rem;
+        line-height: 1.22;
+        letter-spacing: -0.01em;
+    }
+
+    .intro-card p {
+        margin: 0 0 0.8rem;
+        color: #9dacc0;
+        font-size: 0.84rem;
+        line-height: 1.55;
+    }
+
+    .intro-card p:last-child {
+        margin-bottom: 0;
     }
 
     .cover-details {
@@ -221,8 +254,8 @@ st.markdown(
     }
 
     .subscription-intro {
-        max-width: 700px;
-        margin-bottom: 1.35rem;
+        max-width: 680px;
+        margin-bottom: 1.45rem;
     }
 
     .subscription-title {
@@ -234,9 +267,9 @@ st.markdown(
     }
 
     .subscription-copy {
-        margin: 0 0 0.9rem;
+        margin: 0 0 0.8rem;
         color: #b7c3d3;
-        line-height: 1.65;
+        line-height: 1.6;
     }
 
     [class*="st-key-subscription_card"] [data-testid="stTextInput"] label {
@@ -261,20 +294,11 @@ st.markdown(
         font-weight: 720;
     }
 
-    .subscription-note,
-    .subscription-privacy {
-        color: #8495aa;
-        line-height: 1.5;
-    }
-
     .subscription-note {
-        margin: 0.9rem 0 0.45rem;
+        margin: 0.85rem 0 0;
+        color: #8495aa;
         font-size: 0.79rem;
-    }
-
-    .subscription-privacy {
-        margin: 0;
-        font-size: 0.75rem;
+        line-height: 1.5;
     }
 
     .question-meta {
@@ -480,8 +504,88 @@ st.markdown(
         background: rgba(10, 20, 34, 0.92);
         border: 1px solid rgba(255, 255, 255, 0.10);
         border-radius: 20px;
-        padding: 1.15rem;
+        padding: clamp(1.15rem, 2.4vw, 1.55rem);
         box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+    }
+
+    .result-plane-title {
+        margin: 0 0 0.65rem;
+        color: #e7eef6;
+        font-size: clamp(1.2rem, 2.1vw, 1.45rem) !important;
+        line-height: 1.28;
+        letter-spacing: -0.02em;
+    }
+
+    .result-plane-summary {
+        margin: 0 0 1.6rem;
+        color: #93a4b8;
+        font-size: 0.9rem;
+        line-height: 1.55;
+    }
+
+    .result-label {
+        margin: 0 0 0.4rem;
+        color: var(--compass-cyan);
+        font-size: 0.72rem;
+        font-weight: 760;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+    }
+
+    .result-profile {
+        margin: 0 0 0.75rem;
+        color: #f7f9fc;
+        font-size: clamp(1.8rem, 3.3vw, 2.25rem) !important;
+        line-height: 1.12;
+        letter-spacing: -0.035em;
+    }
+
+    .result-interpretation {
+        margin: 0 0 1rem;
+        color: #c4cfdb;
+        font-size: 0.96rem;
+        line-height: 1.62;
+    }
+
+    .result-intensity {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin: 0 0 1.8rem;
+        padding: 0.5rem 0.72rem;
+        border: 1px solid rgba(255, 255, 255, 0.085);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        color: #aebccd;
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+
+    .result-explainer {
+        margin: 0 0 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.075);
+    }
+
+    .result-explainer h4 {
+        margin: 0 0 0.55rem;
+        color: #dce6ef;
+        font-size: 0.96rem;
+    }
+
+    .result-explainer p {
+        margin: 0;
+        color: #91a2b6;
+        font-size: 0.85rem;
+        line-height: 1.58;
+    }
+
+    .result-technical {
+        margin: 0.65rem 0 0.2rem;
+        color: #718399;
+        font-size: 0.72rem;
+        line-height: 1.45;
+        text-align: center;
     }
 
     .nuance-grid {
@@ -590,8 +694,17 @@ st.markdown(
             font-size: clamp(2rem, 11vw, 2.65rem);
             line-height: 1.08;
         }
-        .cover-copy { line-height: 1.55; }
-        .cover-details { margin-top: 1.5rem; }
+        .cover-introduction {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 1.4rem;
+        }
+        .intro-card {
+            padding: 1.1rem;
+        }
+        .intro-card h2 {
+            min-height: 0;
+        }
 
         .question-title {
             margin: 1.35rem 0 1.25rem;
@@ -680,6 +793,41 @@ def save_subscription_email(email):
     return True
 
 
+def format_decimal_es(value):
+    """Muestra un número con un decimal y coma, sin cambiar su valor."""
+    return f"{value:.1f}".replace(".", ",")
+
+
+def describe_intensity(intensity):
+    """Añade una etiqueta visual al porcentaje calculado previamente."""
+    if intensity < 25:
+        return "Muy cercana al centro"
+    if intensity < 50:
+        return "Moderada"
+    if intensity < 75:
+        return "Definida"
+    return "Muy definida"
+
+
+def result_summary_html(title, summary, profile, interpretation, intensity, explanation):
+    """Ordena el texto visible de un plano sin intervenir en sus cálculos."""
+    return (
+        f'<h2 class="result-plane-title">{html.escape(title)}</h2>'
+        f'<p class="result-plane-summary">{html.escape(summary)}</p>'
+        '<p class="result-label">Tu resultado</p>'
+        f'<h3 class="result-profile">{html.escape(profile)}</h3>'
+        f'<p class="result-interpretation">{html.escape(interpretation)}</p>'
+        '<p class="result-intensity">'
+        "Intensidad de tu orientación: "
+        f"{format_decimal_es(intensity)} % · {describe_intensity(intensity)}"
+        "</p>"
+        '<div class="result-explainer">'
+        "<h4>¿Qué mide este plano?</h4>"
+        f"<p>{html.escape(explanation)}</p>"
+        "</div>"
+    )
+
+
 def nuance_card_html(kind, value):
     """Construye una tarjeta visual para uno de los dos matices."""
     model = build_nuance_bar(kind, value)
@@ -714,52 +862,66 @@ def render_cover():
                 <h1 class="cover-title">
                     Descubre tu <span class="cover-gradient">brújula política</span>
                 </h1>
-                <p class="cover-copy">
-                    Comprende cómo piensas sobre el Estado, la sociedad y los
-                    grandes temas que marcan el futuro de Panamá.
-                </p>
                 <div class="cover-introduction">
-                    <p class="intro-lead">
-                        Crear conciencia política comienza por reflexionar sobre
-                        nuestras propias ideas acerca del orden político y la
-                        organización de la sociedad.
-                    </p>
-                    <p>
-                        Este cuestionario fue creado para facilitar esa reflexión
-                        y estimular el pensamiento crítico, no para decirte qué
-                        debes pensar.
-                    </p>
-                    <p>
-                        Responderás únicamente 24 preguntas y no necesitas
-                        proporcionar tu nombre ni ningún dato personal para
-                        conocer tu resultado. Al finalizar, descubrirás con qué
-                        perfil político se alinea más tu manera de pensar y
-                        recibirás una breve interpretación de tus respuestas.
-                    </p>
-                    <p>
-                        Somos panameños que amamos nuestro país y creemos que una
-                        mejor democracia comienza con una conversación pública
-                        más respetuosa, informada y reflexiva. Si al finalizar
-                        deseas seguir participando, podrás dejar voluntariamente
-                        tu correo para recibir futuras encuestas y contenidos
-                        relacionados con este proyecto.
-                    </p>
-                    <p class="intro-authors">
-                        Autores: Pablo García de Paredes y Mark Harrick.
-                    </p>
-                </div>
-                <div class="cover-details">
-                    <div class="cover-detail">
-                        <span class="cover-detail-icon" aria-hidden="true">🕒</span>
-                        <span>Aproximadamente 4 minutos</span>
+                    <div class="intro-card">
+                        <span class="intro-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="8"></circle>
+                                <path d="m14.8 9.2-1.7 3.9-3.9 1.7 1.7-3.9 3.9-1.7Z"></path>
+                            </svg>
+                        </span>
+                        <h2>¿Qué es la Brújula Política Panameña?</h2>
+                        <p>
+                            La Brújula Política Panameña es un modelo de
+                            orientación política que identifica el perfil con el
+                            que más se alinean tus ideas sobre el Estado, la
+                            sociedad y la organización del país.
+                        </p>
+                        <p>
+                            Responderás únicamente 24 preguntas y al finalizar
+                            recibirás un resultado inmediato acompañado de una
+                            breve interpretación.
+                        </p>
                     </div>
-                    <div class="cover-detail">
-                        <span class="cover-detail-icon" aria-hidden="true">⚖️</span>
-                        <span>No existen respuestas correctas o incorrectas</span>
+                    <div class="intro-card">
+                        <span class="intro-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <rect x="5" y="10" width="14" height="10" rx="2"></rect>
+                                <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+                            </svg>
+                        </span>
+                        <h2>¿Es privado?</h2>
+                        <p>
+                            No necesitas proporcionar tu nombre ni ningún dato
+                            personal para conocer tu resultado.
+                        </p>
+                        <p>
+                            Al finalizar, si lo deseas, podrás dejar
+                            voluntariamente tu correo para recibir futuras
+                            encuestas y contenidos relacionados con este
+                            proyecto.
+                        </p>
                     </div>
-                    <div class="cover-detail">
-                        <span class="cover-detail-icon" aria-hidden="true">📊</span>
-                        <span>Resultado inmediato y personalizado</span>
+                    <div class="intro-card">
+                        <span class="intro-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="9" cy="8" r="3"></circle>
+                                <circle cx="17" cy="9" r="2"></circle>
+                                <path d="M3.5 19a5.5 5.5 0 0 1 11 0"></path>
+                                <path d="M14 15.5a4 4 0 0 1 6.5 3.5"></path>
+                            </svg>
+                        </span>
+                        <h2>¿Quiénes somos?</h2>
+                        <p>
+                            Este proyecto fue creado por Pablo García de Paredes
+                            y Mark Harrick con el propósito de contribuir a una
+                            conversación pública más reflexiva, respetuosa e
+                            informada entre los panameños.
+                        </p>
+                        <p>
+                            Creemos que una mejor democracia comienza cuando
+                            entendemos primero nuestras propias ideas.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -907,23 +1069,16 @@ def render_subscription():
             """
             <div class="subscription-intro">
                 <h2 class="subscription-title">
-                    Sigamos construyendo una ciudadanía más consciente
+                    Gracias por participar
                 </h2>
                 <p class="subscription-copy">
-                    Gracias por completar la Brújula Política Panameña.
+                    Esperamos que este resultado te haya ayudado a comprender
+                    mejor tu manera de pensar sobre la política.
                 </p>
                 <p class="subscription-copy">
-                    Esperamos que este ejercicio haya servido para reflexionar
-                    sobre algunas de las ideas que orientan tu manera de entender
-                    la política y la sociedad. Nuestro objetivo no es decirle a
-                    nadie qué pensar, sino promover una conversación pública más
-                    crítica, respetuosa e informada.
-                </p>
-                <p class="subscription-copy">
-                    Si te interesa seguir participando, puedes dejarnos
-                    voluntariamente tu correo. Te enviaremos futuras encuestas,
-                    nuevos análisis y otros contenidos relacionados con este
-                    proyecto.
+                    La Brújula Política Panameña es un proyecto en desarrollo.
+                    Si deseas recibir futuras encuestas y nuevos contenidos,
+                    puedes dejarnos voluntariamente tu correo.
                 </p>
             </div>
             """,
@@ -960,12 +1115,7 @@ def render_subscription():
             st.markdown(
                 """
                 <p class="subscription-note">
-                    Solo utilizaremos tu correo para compartir nuevos contenidos
-                    y futuras encuestas. Podrás darte de baja cuando quieras.
-                </p>
-                <p class="subscription-privacy">
-                    🔒 Tu correo no será compartido con terceros ni utilizado
-                    para fines distintos a este proyecto.
+                    No compartiremos tu correo con terceros.
                 </p>
                 """,
                 unsafe_allow_html=True,
@@ -992,36 +1142,73 @@ def render_results():
         political_column, social_column = st.columns(2, gap="large")
 
         with political_column:
-            st.subheader("1. Estado y forma de hacer política")
-            st.caption(
-                "Cómo combinas el papel del Estado con la forma de resolver "
-                "problemas y ejercer la política."
+            st.markdown(
+                result_summary_html(
+                    title="1. ¿Cómo prefieres que se gobierne el país?",
+                    summary=(
+                        "Este plano muestra qué valoras más al ejercer el "
+                        "gobierno: la capacidad técnica, las reglas y la gestión "
+                        "pública, o la cercanía política, la representación y la "
+                        "resolución directa de problemas."
+                    ),
+                    profile=classification["name"],
+                    interpretation=describe(classification),
+                    intensity=classification["intensity"],
+                    explanation=(
+                        "Este plano representa dos aspectos de tu manera de "
+                        "entender el gobierno. En la dirección horizontal compara "
+                        "los favores y contactos con el mérito y la capacidad. En "
+                        "la dirección vertical compara la preferencia por un "
+                        "gobierno pequeño con un gobierno activo."
+                    ),
+                ),
+                unsafe_allow_html=True,
             )
-            st.markdown(f"### {classification['name']}")
-            st.write(f"**Coordenadas:** X = {x:.1f}, Y = {y:.1f}")
-            st.write(f"**Intensidad:** {classification['intensity']:.1f}%")
 
             figure = create_map(x, y)
             st.pyplot(figure, use_container_width=True)
             plt.close(figure)
-            st.write(describe(classification))
+            st.markdown(
+                '<p class="result-technical">'
+                f"Datos técnicos: X = {format_decimal_es(x)} · "
+                f"Y = {format_decimal_es(y)}"
+                "</p>",
+                unsafe_allow_html=True,
+            )
 
         with social_column:
-            st.subheader("2. Valores sociales, familia y modernidad")
-            st.caption(
-                "Cómo relacionas la familia y la autonomía personal con la "
-                "tradición, la ciencia y la modernización."
-            )
-            st.markdown(f"### {social_classification['name']}")
-            st.write(f"**Coordenadas:** X = {social_x:.1f}, Y = {social_y:.1f}")
-            st.write(
-                f"**Intensidad:** {social_classification['intensity']:.1f}%"
+            st.markdown(
+                result_summary_html(
+                    title="2. ¿Cómo entiendes la familia y el cambio social?",
+                    summary=(
+                        "Este plano muestra cómo combinas la tradición familiar "
+                        "y moral con la autonomía personal, y la costumbre y la "
+                        "autoridad religiosa con la ciencia y la modernización."
+                    ),
+                    profile=social_classification["name"],
+                    interpretation=describe_social(social_classification),
+                    intensity=social_classification["intensity"],
+                    explanation=(
+                        "En la dirección horizontal, este plano compara la "
+                        "tradición moral y la familia tradicional con la autonomía "
+                        "personal y la diversidad. En la dirección vertical "
+                        "compara la costumbre, la religión y la autoridad moral "
+                        "con la ciencia, la secularidad y la modernización."
+                    ),
+                ),
+                unsafe_allow_html=True,
             )
 
             social_figure = create_social_map(social_x, social_y)
             st.pyplot(social_figure, use_container_width=True)
             plt.close(social_figure)
-            st.write(describe_social(social_classification))
+            st.markdown(
+                '<p class="result-technical">'
+                f"Datos técnicos: X = {format_decimal_es(social_x)} · "
+                f"Y = {format_decimal_es(social_y)}"
+                "</p>",
+                unsafe_allow_html=True,
+            )
 
     st.subheader("Tus matices")
     st.markdown(

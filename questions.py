@@ -68,7 +68,7 @@ QUESTIONS = [
     },
     {
         "id": "q16",
-        "text": "Los puestos y contratos del Estado deberían asignarse a las personas más capaces y mejor preparadas, aunque no tengan contactos políticos.",
+        "text": "Cuando una persona ha trabajado activamente para que un proyecto político llegue al gobierno, es comprensible que espere ser tomada en cuenta para una oportunidad laboral si cumple con los requisitos del puesto.",
     },
     {
         "id": "q17",
