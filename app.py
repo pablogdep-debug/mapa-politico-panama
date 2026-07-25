@@ -359,7 +359,7 @@ st.markdown(
         max-width: 720px;
         margin: 2rem 0 1.75rem;
         color: var(--compass-text);
-        font-size: clamp(30px, 3vw, 36px) !important;
+        font-size: clamp(27px, 2.7vw, 32px) !important;
         line-height: 1.34;
         letter-spacing: -0.025em;
         font-weight: 600 !important;
@@ -816,7 +816,7 @@ st.markdown(
 
         .question-title {
             margin: 1.35rem 0 1.25rem;
-            font-size: clamp(24px, 7vw, 28px) !important;
+            font-size: clamp(22px, 6.2vw, 25px) !important;
             line-height: 1.36;
             font-weight: 600 !important;
         }
