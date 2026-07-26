@@ -764,6 +764,10 @@ st.markdown(
         white-space: normal;
     }
 
+    [class*="st-key-share_actions"] iframe {
+        height: 150px !important;
+    }
+
     @media (max-width: 900px) {
         [class*="st-key-results_grid"] div[data-testid="stHorizontalBlock"] {
             flex-direction: column !important;
@@ -812,6 +816,10 @@ st.markdown(
 
         .creator-links {
             grid-template-columns: 1fr;
+        }
+
+        [class*="st-key-share_actions"] iframe {
+            height: 285px !important;
         }
 
         .question-title {
@@ -1279,8 +1287,9 @@ def render_share_section(scores, political_name, social_name):
     escaped_url = json.dumps(share_url)
     escaped_whatsapp = html.escape(whatsapp_url, quote=True)
     escaped_facebook = html.escape(facebook_url, quote=True)
-    components.html(
-        f"""
+    with st.container(key="share_actions"):
+        components.html(
+            f"""
         <style>
             * {{ box-sizing: border-box; }}
             body {{
@@ -1418,10 +1427,10 @@ def render_share_section(scores, political_name, social_name):
             new ResizeObserver(resizeFrame).observe(document.body);
             resizeFrame();
         </script>
-        """,
-        height=175,
-        scrolling=False,
-    )
+            """,
+            height=150,
+            scrolling=False,
+        )
 
 
 def render_social_outro():
