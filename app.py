@@ -5,6 +5,8 @@ import html
 import json
 import re
 import time
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -33,6 +35,11 @@ from shared_results import (
     whatsapp_share_url,
 )
 from social import classify_social_position, describe_social
+from storage.google_sheets import (
+    apply_response_save_result,
+    save_anonymous_response,
+    save_subscriber_email,
+)
 
 
 st.set_page_config(
@@ -42,6 +49,7 @@ st.set_page_config(
 )
 
 PUBLIC_APP_URL = "https://brujula-politica-panama.streamlit.app"
+APP_VERSION = "1.0"
 LOGO_PATH = Path("assets/brujula.png")
 LOGO_ALT = (
     "Brújula Democrática — Movimiento de inteligencia participativa "
@@ -987,10 +995,18 @@ def initialize_state():
         "show_results": False,
         "analysis_complete": False,
         "email_submitted": False,
+        "email_save_message": "",
+        "response_uuid": None,
+        "response_saved": False,
+        "response_save_attempted": False,
+        "response_save_message": "",
+        "submitted_at_utc": None,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
+    if not st.session_state.response_uuid:
+        st.session_state.response_uuid = str(uuid.uuid4())
 
 
 def reset_questionnaire():
@@ -1009,6 +1025,13 @@ def reset_questionnaire():
     st.session_state.demographic_record = {}
     st.session_state.show_results = False
     st.session_state.analysis_complete = False
+    st.session_state.email_submitted = False
+    st.session_state.email_save_message = ""
+    st.session_state.response_uuid = str(uuid.uuid4())
+    st.session_state.response_saved = False
+    st.session_state.response_save_attempted = False
+    st.session_state.response_save_message = ""
+    st.session_state.submitted_at_utc = None
 
 
 def start_own_questionnaire():
@@ -1023,17 +1046,6 @@ def is_valid_email(email):
         len(email) <= 254
         and re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email)
     )
-
-
-def save_subscription_email(email):
-    """Punto de conexión para un futuro servicio de suscripciones.
-
-    La interfaz no guarda el correo ni lo relaciona con las respuestas.
-    Cuando se elija un proveedor, esta función podrá enviar únicamente
-    ``email`` a Google Sheets, Brevo, Mailchimp u otro servicio.
-    """
-    del email
-    return True
 
 
 def format_decimal_es(value):
@@ -1519,9 +1531,7 @@ def render_subscription():
         )
 
         if st.session_state.email_submitted:
-            st.success(
-                "¡Muchas gracias! Será un gusto seguir reflexionando contigo."
-            )
+            st.success(st.session_state.email_save_message)
         else:
             with st.form("subscription_form", clear_on_submit=False):
                 email = st.text_input(
@@ -1541,9 +1551,14 @@ def render_subscription():
                         "Parece que el correo no está completo. "
                         "Revísalo e inténtalo nuevamente."
                     )
-                elif save_subscription_email(normalized_email):
-                    st.session_state.email_submitted = True
-                    st.rerun()
+                else:
+                    save_result = save_subscriber_email(normalized_email)
+                    if save_result.success:
+                        st.session_state.email_submitted = True
+                        st.session_state.email_save_message = save_result.message
+                        st.rerun()
+                    else:
+                        st.error(save_result.message)
 
             st.markdown(
                 """
@@ -1929,10 +1944,67 @@ def render_result_report(scores, shared=False):
         )
 
 
+def build_anonymous_response_record(scores):
+    """Ordena los datos ya calculados sin añadir información identificable."""
+    political = classify_position(scores["x"], scores["y"])
+    social = classify_social_position(scores["familia"], scores["modernidad"])
+    demographics = st.session_state.demographic_record
+    if not st.session_state.submitted_at_utc:
+        st.session_state.submitted_at_utc = datetime.now(timezone.utc).isoformat()
+
+    return {
+        "response_uuid": st.session_state.response_uuid,
+        "submitted_at_utc": st.session_state.submitted_at_utc,
+        "app_version": APP_VERSION,
+        "age_range": demographics.get("age_range", ""),
+        "residence_region": demographics.get("residence_region", ""),
+        "residence_district": demographics.get("residence_district", ""),
+        **dict(st.session_state.answers),
+        "political_x": scores["x"],
+        "political_y": scores["y"],
+        "political_classification": political["name"],
+        "political_profile": political["profile"] or "",
+        "political_position_type": political["position_type"],
+        "political_intensity": political["intensity"],
+        "social_x": scores["familia"],
+        "social_y": scores["modernidad"],
+        "social_classification": social["name"],
+        "social_profile": social["profile"] or "",
+        "social_position_type": social["position_type"],
+        "social_intensity": social["intensity"],
+        "security_score": scores["seguridad"],
+        "partisanship_score": scores["partidismo"],
+    }
+
+
+def save_current_response(scores):
+    """Intenta guardar una sola vez; un fallo queda disponible para reintento."""
+    if st.session_state.response_saved or st.session_state.response_save_attempted:
+        return
+    result = save_anonymous_response(build_anonymous_response_record(scores))
+    apply_response_save_result(st.session_state, result)
+
+
+def render_response_save_status(scores):
+    """Informa del registro sin ocultar ni condicionar el resultado político."""
+    if st.session_state.response_saved:
+        st.success(st.session_state.response_save_message)
+        return
+
+    st.warning(st.session_state.response_save_message)
+    if st.button("Intentar registrar nuevamente", key="retry_response_save"):
+        st.session_state.response_save_attempted = False
+        save_current_response(scores)
+        st.rerun()
+
+
 def render_results():
     """Calcula la sesión actual y delega su presentación sin alterar la fórmula."""
     numeric_answers = dict(st.session_state.answers)
-    render_result_report(calculate_scores(numeric_answers))
+    scores = calculate_scores(numeric_answers)
+    save_current_response(scores)
+    render_response_save_status(scores)
+    render_result_report(scores)
 
 
 def shared_result_from_query():
