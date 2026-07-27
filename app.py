@@ -89,6 +89,11 @@ st.markdown(
         --compass-magenta: #b936c5;
         --compass-border: #d8dee8;
         --compass-shadow: 0 8px 28px rgba(16, 42, 80, 0.08);
+        --results-max-width: 1120px;
+        --results-section-gap: 1.25rem;
+        --results-card-padding: clamp(1.25rem, 2.6vw, 1.8rem);
+        --results-card-radius: 20px;
+        --results-control-height: 52px;
     }
 
     .stApp {
@@ -272,28 +277,24 @@ st.markdown(
         box-shadow: 0 15px 34px rgba(79, 92, 246, 0.34);
     }
 
-    [class*="st-key-subscription_card"] {
-        width: min(100%, 820px);
-        margin: 2.2rem auto 1.4rem;
-        padding: clamp(1.5rem, 4vw, 2.25rem);
+    [class*="st-key-subscription_card"],
+    [class*="st-key-patreon_support_card"],
+    [class*="st-key-share_section_card"],
+    [class*="st-key-social_outro_card"],
+    [class*="st-key-result_nuances"] {
+        width: 100%;
+        margin: 0 0 var(--results-section-gap);
+        padding: var(--results-card-padding);
         border: 1px solid var(--compass-border);
-        border-radius: 24px;
-        background:
-            radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.07), transparent 22rem),
-            var(--compass-panel);
+        border-radius: var(--results-card-radius);
+        background: var(--compass-panel);
         box-shadow: var(--compass-shadow);
     }
 
     [class*="st-key-patreon_support_card"] {
-        width: min(100%, 920px);
-        margin: 2.2rem auto 1.4rem;
-        padding: clamp(1.4rem, 3vw, 2rem);
         overflow: hidden;
-        border: 1px solid var(--compass-border);
         border-left: 4px solid var(--compass-blue);
         border-right: 4px solid var(--compass-red);
-        border-radius: 22px;
-        background: var(--compass-panel);
         box-shadow: 0 14px 34px rgba(21, 50, 88, 0.1);
     }
 
@@ -329,7 +330,7 @@ st.markdown(
     }
 
     [class*="st-key-patreon_support_card"] a {
-        min-height: 52px;
+        min-height: var(--results-control-height);
         border: 0 !important;
         border-radius: 14px;
         background: var(--compass-blue) !important;
@@ -368,7 +369,7 @@ st.markdown(
     }
 
     [class*="st-key-subscription_card"] [data-testid="stTextInput"] input {
-        min-height: 52px;
+        min-height: var(--results-control-height);
         border-color: var(--compass-border);
         border-radius: 13px;
         background: #fff;
@@ -376,7 +377,7 @@ st.markdown(
     }
 
     [class*="st-key-subscription_card"] form button {
-        min-height: 52px;
+        min-height: var(--results-control-height);
         border: 0 !important;
         border-radius: 14px;
         background: linear-gradient(105deg, var(--compass-blue), var(--compass-violet)) !important;
@@ -694,6 +695,57 @@ st.markdown(
         box-shadow: var(--compass-shadow);
     }
 
+    [class*="st-key-results_page"] {
+        width: min(100%, var(--results-max-width));
+        margin-inline: auto;
+    }
+
+    [class*="st-key-results_page"] > div[data-testid="stVerticalBlock"] {
+        gap: 0;
+    }
+
+    [class*="st-key-results_page"] [class*="st-key-results_header"] {
+        margin-bottom: 1.6rem;
+    }
+
+    [class*="st-key-results_page"] [class*="st-key-results_grid"] {
+        width: 100%;
+        margin-bottom: var(--results-section-gap);
+    }
+
+    [class*="st-key-results_page"]
+    [class*="st-key-results_grid"]
+    div[data-testid="stHorizontalBlock"] {
+        align-items: stretch;
+        gap: var(--results-section-gap);
+    }
+
+    [class*="st-key-results_page"]
+    [class*="st-key-results_grid"]
+    div[data-testid="stColumn"] {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        padding: var(--results-card-padding);
+        border-radius: var(--results-card-radius);
+    }
+
+    [class*="st-key-results_page"]
+    [class*="st-key-results_grid"]
+    div[data-testid="stColumn"] > div[data-testid="stVerticalBlock"] {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    [class*="st-key-results_page"]
+    [class*="st-key-results_grid"]
+    div[data-testid="stColumn"] > div[data-testid="stVerticalBlock"]
+    > div[data-testid="stElementContainer"]:first-child {
+        flex: 1 1 auto;
+    }
+
     .result-plane-title {
         margin: 0 0 0.65rem;
         color: var(--compass-text);
@@ -892,6 +944,39 @@ st.markdown(
         line-height: 1.55;
     }
 
+    [class*="st-key-share_section_card"] .share-card,
+    [class*="st-key-social_outro_card"] .social-outro {
+        width: 100%;
+        margin: 0 0 1.15rem;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    [class*="st-key-result_nuances"] .nuance-grid {
+        margin: 0.65rem 0 0;
+    }
+
+    [class*="st-key-social_outro_card"] .social-outro {
+        margin-bottom: 0;
+    }
+
+    [class*="st-key-share_section_card"] [class*="st-key-share_actions"] {
+        width: 100%;
+    }
+
+    [class*="st-key-restart_button"] {
+        width: 100%;
+        margin-top: 0.1rem;
+    }
+
+    [class*="st-key-results_page"] [class*="st-key-restart_button"] button {
+        min-height: var(--results-control-height);
+        border-radius: 14px;
+    }
+
     .creator-links {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -952,6 +1037,12 @@ st.markdown(
             flex: 1 1 100% !important;
         }
 
+        [class*="st-key-results_page"]
+        [class*="st-key-results_grid"]
+        div[data-testid="stHorizontalBlock"] {
+            gap: var(--results-section-gap);
+        }
+
         .nuance-grid { grid-template-columns: 1fr; }
     }
 
@@ -990,6 +1081,20 @@ st.markdown(
 
         .creator-links {
             grid-template-columns: 1fr;
+        }
+
+        [class*="st-key-results_page"] {
+            width: 100%;
+        }
+
+        [class*="st-key-subscription_card"],
+        [class*="st-key-patreon_support_card"],
+        [class*="st-key-share_section_card"],
+        [class*="st-key-social_outro_card"],
+        [class*="st-key-result_nuances"],
+        [class*="st-key-results_grid"] div[data-testid="stColumn"] {
+            padding: 1.15rem;
+            border-radius: 18px;
         }
 
         [class*="st-key-share_actions"] iframe {
@@ -1602,7 +1707,7 @@ def render_subscription():
                 submitted = st.form_submit_button(
                     "Quiero recibir futuras encuestas",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             if submitted:
@@ -1903,37 +2008,12 @@ def render_social_outro():
     )
 
 
-def render_result_report(scores, shared=False):
-    """Dibuja el mismo informe para el participante o para un enlace compartido."""
-
+def render_result_planes(scores, classification, social_classification):
+    """Dibuja ambos planos con una estructura interna idéntica."""
     x = scores["x"]
     y = scores["y"]
-    classification = classify_position(x, y)
-
     social_x = scores["familia"]
     social_y = scores["modernidad"]
-    social_classification = classify_social_position(social_x, social_y)
-
-    if shared:
-        st.markdown(
-            """
-            <section class="shared-banner">
-                <span class="shared-badge">Resultado compartido</span>
-                <h1>Un amigo compartió contigo su resultado</h1>
-                <p>
-                    Explora su ubicación en la Brújula Democrática y luego
-                    descubre dónde te ubicas tú.
-                </p>
-            </section>
-            """,
-            unsafe_allow_html=True,
-        )
-        render_shared_cta("top")
-    else:
-        st.title("Tu perfil político panameño")
-        st.write(
-            "Dos planos para entender cómo ves al Estado, la política y la sociedad."
-        )
 
     with st.container(key="results_grid"):
         political_column, social_column = st.columns(2, gap="large")
@@ -2007,32 +2087,77 @@ def render_result_report(scores, shared=False):
                 unsafe_allow_html=True,
             )
 
-    st.subheader("Tus matices")
-    st.markdown(
+
+def render_result_nuances(scores, contained=False):
+    """Presenta los matices; la vista normal puede integrarlos en su sistema."""
+    nuance_html = (
         '<div class="nuance-grid">'
         + nuance_card_html("seguridad", scores["seguridad"])
         + nuance_card_html("partidismo", scores["partidismo"])
-        + "</div>",
-        unsafe_allow_html=True,
+        + "</div>"
+    )
+    if contained:
+        with st.container(key="result_nuances"):
+            st.subheader("Tus matices")
+            st.markdown(nuance_html, unsafe_allow_html=True)
+    else:
+        st.subheader("Tus matices")
+        st.markdown(nuance_html, unsafe_allow_html=True)
+
+
+def render_result_report(scores, shared=False):
+    """Dibuja el informe propio o compartido sin alterar sus resultados."""
+    classification = classify_position(scores["x"], scores["y"])
+    social_classification = classify_social_position(
+        scores["familia"],
+        scores["modernidad"],
     )
 
     if shared:
+        st.markdown(
+            """
+            <section class="shared-banner">
+                <span class="shared-badge">Resultado compartido</span>
+                <h1>Un amigo compartió contigo su resultado</h1>
+                <p>
+                    Explora su ubicación en la Brújula Democrática y luego
+                    descubre dónde te ubicas tú.
+                </p>
+            </section>
+            """,
+            unsafe_allow_html=True,
+        )
+        render_shared_cta("top")
+        render_result_planes(scores, classification, social_classification)
+        render_result_nuances(scores)
         render_shared_cta("bottom")
         render_social_outro()
-    else:
+        return
+
+    with st.container(key="results_page"):
+        with st.container(key="results_header"):
+            st.title("Tu perfil político panameño")
+            st.write(
+                "Dos planos para entender cómo ves al Estado, la política y la sociedad."
+            )
+
+        render_result_planes(scores, classification, social_classification)
+        render_result_nuances(scores, contained=True)
         render_patreon_support()
         render_subscription()
-        render_share_section(
-            scores,
-            classification["name"],
-            social_classification["name"],
-        )
-        render_social_outro()
+        with st.container(key="share_section_card"):
+            render_share_section(
+                scores,
+                classification["name"],
+                social_classification["name"],
+            )
+        with st.container(key="social_outro_card"):
+            render_social_outro()
         st.button(
             "Volver a realizar el cuestionario",
             on_click=reset_questionnaire,
             type="primary",
-            use_container_width=True,
+            width="stretch",
             key="restart_button",
         )
 

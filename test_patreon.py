@@ -62,23 +62,17 @@ def test_patreon_url_contains_no_participant_data():
 
 def test_patreon_card_is_only_in_normal_result_branch():
     function = _render_result_report_node()
-    shared_branches = [
-        node
-        for node in function.body
+    shared_index, shared_branch = next(
+        (index, node)
+        for index, node in enumerate(function.body)
         if isinstance(node, ast.If)
         and isinstance(node.test, ast.Name)
         and node.test.id == "shared"
-    ]
-    result_branch = next(
-        node
-        for node in shared_branches
-        if "render_patreon_support" in _called_function_names(node.orelse)
     )
-    assert "render_patreon_support" not in _called_function_names(result_branch.body)
-    assert _called_function_names(result_branch.orelse).count(
-        "render_patreon_support"
-    ) == 1
-    normal_calls = _called_function_names(result_branch.orelse)
+    shared_calls = _called_function_names(shared_branch.body)
+    normal_calls = _called_function_names(function.body[shared_index + 1 :])
+    assert "render_patreon_support" not in shared_calls
+    assert normal_calls.count("render_patreon_support") == 1
     assert normal_calls.index("render_patreon_support") < normal_calls.index(
         "render_subscription"
     )
