@@ -11,6 +11,15 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import streamlit.components.v1 as components
 
+from demographics import (
+    AGE_FIELD_ID,
+    AGE_RANGES,
+    DISTRICT_FIELD_ID,
+    build_demographic_record,
+    filter_residence_options,
+    is_valid_age_range,
+    is_valid_residence_option,
+)
 from interpretations import classify_position, describe
 from nuances import build_nuance_bar
 from plotting import create_map, create_social_map
@@ -458,6 +467,102 @@ st.markdown(
         font-weight: 650;
     }
 
+    .demographic-intro {
+        margin: 1.5rem 0 1.25rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid var(--compass-border);
+        border-radius: 15px;
+        background: var(--compass-panel-soft);
+    }
+
+    .demographic-intro h1 {
+        margin: 0 0 0.45rem;
+        color: var(--compass-text);
+        font-size: clamp(1.35rem, 2.5vw, 1.7rem);
+        letter-spacing: -0.02em;
+    }
+
+    .demographic-intro p,
+    .demographic-help {
+        margin: 0;
+        color: var(--compass-muted);
+        line-height: 1.55;
+    }
+
+    [class*="st-key-dem_age_range_"] button {
+        min-height: 58px;
+        justify-content: flex-start;
+        margin-bottom: 0.25rem;
+        padding-inline: 1rem;
+        border: 1px solid var(--compass-border);
+        border-left: 4px solid var(--compass-blue);
+        border-radius: 14px;
+        background: #fff;
+        color: var(--compass-text);
+        font-weight: 620;
+        text-align: left;
+    }
+
+    [class*="st-key-dem_age_range_"] button[kind="primary"],
+    [class*="st-key-dem_age_range_"] button[data-testid="stBaseButton-primary"] {
+        border-color: var(--compass-blue);
+        background: #eaf1fa;
+        box-shadow: 0 0 0 1px var(--compass-blue);
+        color: var(--compass-text);
+    }
+
+    [class*="st-key-dem_age_range_"] button:focus-visible,
+    [class*="dem_district"] [data-baseweb="select"] > div:focus-within {
+        outline: 3px solid rgba(10, 67, 143, 0.24);
+        outline-offset: 2px;
+    }
+
+    [class*="dem_district"] [data-baseweb="select"] > div,
+    [class*="dem_district"] .react-aria-ComboBox [role="group"],
+    [class*="district_search"] [data-testid="stTextInput"] input {
+        min-height: 52px;
+        border-color: var(--compass-border) !important;
+        border-radius: 13px;
+        background: #fff !important;
+        color: var(--compass-text) !important;
+    }
+
+    [class*="dem_district"] label,
+    [class*="district_search"] label {
+        color: var(--compass-text) !important;
+        font-weight: 620;
+    }
+
+    [class*="dem_district"] svg {
+        fill: var(--compass-text) !important;
+    }
+
+    [class*="dem_district"] .react-aria-ComboBox input,
+    [class*="dem_district"] .react-aria-ComboBox button {
+        background: #fff !important;
+        color: var(--compass-text) !important;
+    }
+
+    [class*="dem_district"] input::placeholder,
+    [class*="district_search"] input::placeholder {
+        color: var(--compass-muted) !important;
+        opacity: 1 !important;
+    }
+
+    [class*="st-key-next_demographic_age"] button,
+    [class*="st-key-finish_demographics"] button {
+        border: 0 !important;
+        background: linear-gradient(105deg, var(--compass-blue), var(--compass-violet)) !important;
+        color: white !important;
+    }
+
+    [class*="st-key-next_demographic_age"] button:disabled,
+    [class*="st-key-finish_demographics"] button:disabled {
+        border: 1px solid var(--compass-border) !important;
+        background: #dbe2ea !important;
+        color: #69798c !important;
+    }
+
     [class*="st-key-back_"] button {
         border: 1px solid var(--compass-border) !important;
         background: #fff !important;
@@ -872,6 +977,13 @@ def initialize_state():
         "started": False,
         "current_question": 0,
         "answers": {},
+        "demographic_step": 0,
+        "age_range": None,
+        "residence_region": None,
+        "residence_district": None,
+        "dem_district": None,
+        "district_search": "",
+        "demographic_record": {},
         "show_results": False,
         "analysis_complete": False,
         "email_submitted": False,
@@ -886,6 +998,15 @@ def reset_questionnaire():
     st.session_state.started = False
     st.session_state.current_question = 0
     st.session_state.answers = {}
+    st.session_state.demographic_step = 0
+    st.session_state.age_range = None
+    st.session_state.residence_region = None
+    st.session_state.residence_district = None
+    st.session_state.dem_district = None
+    st.session_state.district_search = ""
+    st.session_state.pop("_dem_district", None)
+    st.session_state.pop("_district_search", None)
+    st.session_state.demographic_record = {}
     st.session_state.show_results = False
     st.session_state.analysis_complete = False
 
@@ -1019,14 +1140,15 @@ def render_cover():
                         </span>
                         <h2>¿Es privado?</h2>
                         <p>
-                            No necesitas proporcionar tu nombre ni ningún dato
-                            personal para conocer tu resultado.
+                            Tus respuestas son anónimas. No solicitamos tu
+                            nombre, cédula ni dirección. Tu rango de edad y
+                            distrito se utilizarán únicamente para análisis
+                            estadísticos agrupados.
                         </p>
                         <p>
-                            Al finalizar, si lo deseas, podrás dejar
-                            voluntariamente tu correo para recibir futuras
-                            encuestas y contenidos relacionados con este
-                            proyecto.
+                            En caso decidas dejar un correo para recibir
+                            noticias del movimiento, el correo que dejes
+                            voluntariamente no se vincula con tu resultado.
                         </p>
                     </div>
                     <div class="intro-card">
@@ -1134,7 +1256,7 @@ def render_question():
 
             with next_column:
                 final_question = index == total - 1
-                next_label = "Ver mis resultados" if final_question else "Siguiente →"
+                next_label = "Continuar →" if final_question else "Siguiente →"
 
                 if st.button(
                     next_label,
@@ -1150,12 +1272,196 @@ def render_question():
                                 "Antes de ver tus resultados, responde las 24 preguntas."
                             )
                         else:
-                            st.session_state.show_results = True
-                            st.session_state.analysis_complete = False
+                            st.session_state.demographic_step = 1
                             st.rerun()
                     else:
                         st.session_state.current_question += 1
                         st.rerun()
+
+
+def demographic_progress(step):
+    """Muestra un contador propio sin convertir los datos en q25 o q26."""
+    percentage = step * 50
+    st.markdown(
+        '<div class="question-shell">'
+        '<div class="question-meta">'
+        f"<span>Datos finales · {step} de 2</span>"
+        f'<span class="question-percent">{percentage}%</span>'
+        "</div>"
+        '<div class="progress-track" role="progressbar" '
+        'aria-label="Progreso de los datos finales" aria-valuemin="0" '
+        f'aria-valuemax="2" aria-valuenow="{step}">'
+        f'<div class="progress-fill" style="width:{percentage}%"></div>'
+        "</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_age_range():
+    """Solicita un rango general de edad, separado de las respuestas políticas."""
+    selected_age = st.session_state.age_range
+
+    with st.container(key="question_card_demographic_age"):
+        demographic_progress(1)
+        st.markdown(
+            """
+            <section class="demographic-intro">
+                <h1>Dos datos para entender mejor el mapa</h1>
+                <p>
+                    Antes de mostrarte tu resultado, necesitamos dos datos
+                    generales. Nos ayudarán a analizar cómo cambian las ideas
+                    políticas entre generaciones y territorios. No solicitamos
+                    tu nombre, cédula ni dirección.
+                </p>
+            </section>
+            <h1 class="question-title">
+                ¿En qué rango de edad te encuentras?
+            </h1>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        for index, age_range in enumerate(AGE_RANGES):
+            is_selected = selected_age == age_range
+            visible_label = age_range + ("  ✓ Seleccionada" if is_selected else "")
+            if st.button(
+                visible_label,
+                key=f"{AGE_FIELD_ID}_{index}",
+                type="primary" if is_selected else "secondary",
+                use_container_width=True,
+            ):
+                st.session_state.age_range = age_range
+                st.rerun()
+
+        if selected_age is None:
+            st.caption("Selecciona tu rango de edad para continuar.")
+
+        with st.container(key="navigation"):
+            back_column, next_column = st.columns(2, gap="small")
+            with back_column:
+                if st.button(
+                    "← Atrás",
+                    use_container_width=True,
+                    key="back_demographic_age",
+                ):
+                    st.session_state.demographic_step = 0
+                    st.session_state.current_question = len(QUESTIONS) - 1
+                    st.rerun()
+            with next_column:
+                if st.button(
+                    "Siguiente →",
+                    type="primary",
+                    disabled=not is_valid_age_range(selected_age),
+                    use_container_width=True,
+                    key="next_demographic_age",
+                ):
+                    st.session_state.demographic_step = 2
+                    st.rerun()
+
+
+def persist_district_search():
+    """Copia la búsqueda fuera de la clave temporal del widget."""
+    st.session_state.district_search = st.session_state._district_search
+
+
+def persist_district_selection():
+    """Conserva la opción territorial aunque el usuario vuelva a otra pantalla."""
+    selected_option = st.session_state._dem_district
+    st.session_state.dem_district = selected_option
+    if selected_option is not None:
+        st.session_state.residence_region = selected_option.region
+        st.session_state.residence_district = selected_option.district
+
+
+def render_district():
+    """Solicita un distrito oficial mediante búsqueda tolerante a tildes."""
+    if "_district_search" not in st.session_state:
+        st.session_state._district_search = st.session_state.district_search
+    if "_dem_district" not in st.session_state:
+        st.session_state._dem_district = st.session_state.dem_district
+
+    with st.container(key="question_card_demographic_district"):
+        demographic_progress(2)
+        st.markdown(
+            """
+            <h1 class="question-title">
+                ¿En qué distrito resides actualmente?
+            </h1>
+            <p class="demographic-help">
+                Escribe el nombre o búscalo en la lista. La provincia o comarca
+                aparece junto al distrito para evitar confusiones.
+            </p>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        query = st.text_input(
+            "Buscar distrito",
+            placeholder="Puedes escribir el nombre sin tildes",
+            key="_district_search",
+            on_change=persist_district_search,
+        )
+        filtered_options = filter_residence_options(query)
+        current_option = st.session_state.get(DISTRICT_FIELD_ID)
+        if current_option is not None and current_option not in filtered_options:
+            filtered_options = (current_option,) + filtered_options
+
+        st.selectbox(
+            "Distrito de residencia",
+            options=filtered_options,
+            index=None,
+            placeholder="Escribe o selecciona tu distrito",
+            format_func=lambda option: option.label,
+            key=f"_{DISTRICT_FIELD_ID}",
+            on_change=persist_district_selection,
+        )
+        selected_option = st.session_state.dem_district
+
+        valid_selection = (
+            is_valid_residence_option(selected_option)
+            and st.session_state.residence_region is not None
+            and st.session_state.residence_district is not None
+        )
+        if not filtered_options:
+            st.info("No encontramos coincidencias. Prueba con otra palabra.")
+        if not valid_selection:
+            st.caption("Selecciona tu distrito de residencia para continuar.")
+
+        with st.container(key="navigation"):
+            back_column, next_column = st.columns(2, gap="small")
+            with back_column:
+                if st.button(
+                    "← Atrás",
+                    use_container_width=True,
+                    key="back_demographic_district",
+                ):
+                    st.session_state.demographic_step = 1
+                    st.rerun()
+            with next_column:
+                if st.button(
+                    "Ver mis resultados",
+                    type="primary",
+                    disabled=not valid_selection,
+                    use_container_width=True,
+                    key="finish_demographics",
+                ):
+                    st.session_state.demographic_record = build_demographic_record(
+                        st.session_state.age_range,
+                        st.session_state.residence_region,
+                        st.session_state.residence_district,
+                    )
+                    st.session_state.show_results = True
+                    st.session_state.analysis_complete = False
+                    st.rerun()
+
+
+def render_demographics():
+    """Enruta las dos pantallas finales manteniendo una pregunta por pantalla."""
+    if st.session_state.demographic_step == 1:
+        render_age_range()
+    else:
+        render_district()
 
 
 def render_analysis():
@@ -1649,7 +1955,10 @@ if shared_result is not None:
 elif not st.session_state.started:
     render_cover()
 elif not st.session_state.show_results:
-    render_question()
+    if st.session_state.demographic_step:
+        render_demographics()
+    else:
+        render_question()
 elif not st.session_state.analysis_complete:
     render_analysis()
 else:
