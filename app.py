@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import streamlit.components.v1 as components
 
+from config import PATREON_URL
 from demographics import (
     AGE_FIELD_ID,
     AGE_RANGES,
@@ -82,6 +83,7 @@ st.markdown(
         --compass-text: #102a50;
         --compass-muted: #526174;
         --compass-blue: #0a438f;
+        --compass-red: #c43d4d;
         --compass-cyan: #087f8c;
         --compass-violet: #8b5cf6;
         --compass-magenta: #b936c5;
@@ -280,6 +282,65 @@ st.markdown(
             radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.07), transparent 22rem),
             var(--compass-panel);
         box-shadow: var(--compass-shadow);
+    }
+
+    [class*="st-key-patreon_support_card"] {
+        width: min(100%, 920px);
+        margin: 2.2rem auto 1.4rem;
+        padding: clamp(1.4rem, 3vw, 2rem);
+        overflow: hidden;
+        border: 1px solid var(--compass-border);
+        border-left: 4px solid var(--compass-blue);
+        border-right: 4px solid var(--compass-red);
+        border-radius: 22px;
+        background: var(--compass-panel);
+        box-shadow: 0 14px 34px rgba(21, 50, 88, 0.1);
+    }
+
+    .patreon-heading {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin: 0 0 0.7rem;
+        color: var(--compass-text);
+        font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+        line-height: 1.2;
+        letter-spacing: -0.025em;
+    }
+
+    .patreon-icon {
+        font-size: 1.25rem;
+    }
+
+    .patreon-copy,
+    .patreon-note {
+        max-width: 800px;
+        color: var(--compass-muted);
+        line-height: 1.58;
+    }
+
+    .patreon-copy {
+        margin: 0 0 0.7rem;
+    }
+
+    .patreon-note {
+        margin: 0 0 1.1rem;
+        font-size: 0.9rem;
+    }
+
+    [class*="st-key-patreon_support_card"] a {
+        min-height: 52px;
+        border: 0 !important;
+        border-radius: 14px;
+        background: var(--compass-blue) !important;
+        box-shadow: 0 10px 22px rgba(21, 50, 88, 0.18);
+        color: white !important;
+        font-weight: 740;
+    }
+
+    [class*="st-key-patreon_support_card"] a:hover {
+        background: #102f59 !important;
+        color: white !important;
     }
 
     .subscription-intro {
@@ -1570,6 +1631,37 @@ def render_subscription():
             )
 
 
+def render_patreon_support():
+    """Invita a apoyar el proyecto mediante un enlace externo y estático."""
+    with st.container(key="patreon_support_card"):
+        st.markdown(
+            """
+            <section class="patreon-content">
+                <h2 class="patreon-heading">
+                    <span class="patreon-icon" aria-hidden="true">🧭</span>
+                    Haz que Brújula siga creciendo
+                </h2>
+                <p class="patreon-copy">
+                    Brújula Democrática es una iniciativa independiente. Tu apoyo
+                    nos ayuda a mantener la plataforma, desarrollar nuevos
+                    cuestionarios y convertir las respuestas anónimas en análisis
+                    abiertos sobre cómo pensamos en Panamá.
+                </p>
+                <p class="patreon-note">
+                    El apoyo es completamente voluntario y no cambia tu resultado
+                    ni el acceso a la herramienta.
+                </p>
+            </section>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.link_button(
+            "Hazte miembro en Patreon",
+            PATREON_URL,
+            width="stretch",
+        )
+
+
 def render_shared_cta(key):
     """Invita a iniciar un cuestionario propio desde un resultado de solo lectura."""
     st.button(
@@ -1928,12 +2020,13 @@ def render_result_report(scores, shared=False):
         render_shared_cta("bottom")
         render_social_outro()
     else:
+        render_patreon_support()
+        render_subscription()
         render_share_section(
             scores,
             classification["name"],
             social_classification["name"],
         )
-        render_subscription()
         render_social_outro()
         st.button(
             "Volver a realizar el cuestionario",
