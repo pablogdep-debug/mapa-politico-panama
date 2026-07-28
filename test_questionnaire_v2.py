@@ -29,7 +29,7 @@ EXPECTED_TEXTS = (
     "El Estado no debería meterse en cómo los adultos viven, forman pareja o crean familia, mientras no dañen a nadie.",
     "Prefiero que no suban los impuestos, aunque tenga que pagar por mi cuenta algunos servicios cuando los necesite.",
     "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas.",
-    "Darle demasiado poder a las fuerzas de seguridad termina afectando a personas inocentes.",
+    "La seguridad de los barrios mejora más cuando la policía se gana la confianza de la comunidad que cuando aumenta los patrullajes y retenes.",
     "Aceptaría pagar más impuestos si eso mejora la educación, la salud y los servicios públicos.",
     "El Estado debe fijar límites morales en temas que afectan a los menores, como la educación sexual, aunque algunas familias prefieran decidir solas.",
     "Los partidos fuertes ayudan a que los planes de país no se engaveten con cada gobierno nuevo, aunque dificulten la entrada de nuevas fuerzas.",
@@ -221,6 +221,23 @@ class QuestionnaireV2Tests(unittest.TestCase):
         self.assertEqual(calculate_scores(answers)["modernidad"], 25.0)
         answers["q20"] = 5
         self.assertEqual(calculate_scores(answers)["modernidad"], -25.0)
+
+    def test_q21_keeps_its_community_policing_direction(self):
+        expected = {
+            1: 25.0,
+            2: 12.5,
+            3: 0.0,
+            4: -12.5,
+            5: -25.0,
+        }
+        for value, contribution in expected.items():
+            with self.subTest(value=value):
+                answers = neutral_answers()
+                answers["q21"] = value
+                self.assertEqual(
+                    calculate_scores(answers)["seguridad"],
+                    contribution,
+                )
 
     def test_new_records_use_version_2_2(self):
         self.assertEqual(constant_from_app("APP_VERSION"), "2.2")

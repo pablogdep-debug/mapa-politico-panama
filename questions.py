@@ -88,7 +88,7 @@ QUESTIONS = [
     },
     {
         "id": "q21",
-        "text": "Darle demasiado poder a las fuerzas de seguridad termina afectando a personas inocentes.",
+        "text": "La seguridad de los barrios mejora más cuando la policía se gana la confianza de la comunidad que cuando aumenta los patrullajes y retenes.",
     },
     {
         "id": "q22",
