@@ -28,7 +28,7 @@ EXPECTED_TEXTS = (
     "Si un partido representa mis ideas, vale mantenerle la lealtad aunque no me convenzan todos sus candidatos.",
     "El Estado no debería meterse en cómo los adultos viven, forman pareja o crean familia, mientras no dañen a nadie.",
     "Prefiero que no suban los impuestos, aunque tenga que pagar por mi cuenta algunos servicios cuando los necesite.",
-    "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas. Ellas merecen ser conservadas y protegidas.",
+    "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas.",
     "Darle demasiado poder a las fuerzas de seguridad termina afectando a personas inocentes.",
     "Aceptaría pagar más impuestos si eso mejora la educación, la salud y los servicios públicos.",
     "El Estado debe fijar límites morales en temas que afectan a los menores, como la educación sexual, aunque algunas familias prefieran decidir solas.",

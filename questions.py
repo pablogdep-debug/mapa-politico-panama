@@ -84,7 +84,7 @@ QUESTIONS = [
     },
     {
         "id": "q20",
-        "text": "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas. Ellas merecen ser conservadas y protegidas.",
+        "text": "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas.",
     },
     {
         "id": "q21",
