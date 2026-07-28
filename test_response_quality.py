@@ -84,14 +84,17 @@ def test_invalid_flow_executes_no_scoring_payload_or_storage_callback():
     state["questionnaire_started_at"] = 100.0
     scoring = Mock()
     payload = Mock()
+    instrument_metadata = Mock()
     google_sheets = Mock()
     with patch("response_quality.time.monotonic", return_value=129.9):
         if validate_completion_time(state):
             scoring()
             payload()
+            instrument_metadata()
             google_sheets()
     scoring.assert_not_called()
     payload.assert_not_called()
+    instrument_metadata.assert_not_called()
     google_sheets.assert_not_called()
 
 

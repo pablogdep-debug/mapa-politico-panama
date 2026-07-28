@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import streamlit.components.v1 as components
 
+import config
 from config import PATREON_URL
 from demographics import (
     AGE_FIELD_ID,
@@ -271,6 +272,14 @@ st.markdown(
         color: var(--compass-muted);
         font-size: 0.76rem;
         line-height: 1.45;
+        text-align: center;
+    }
+
+    .instrument-version {
+        margin: 0.55rem auto 0;
+        color: var(--compass-muted);
+        font-size: 0.72rem;
+        line-height: 1.4;
         text-align: center;
     }
 
@@ -1391,6 +1400,12 @@ def render_cover():
             "</p>",
             unsafe_allow_html=True,
         )
+        st.markdown(
+            '<p class="instrument-version">'
+            f"{html.escape(config.instrument_version_display_text())}"
+            "</p>",
+            unsafe_allow_html=True,
+        )
 
 
 def render_question():
@@ -2196,6 +2211,7 @@ def build_anonymous_response_record(scores):
         "response_uuid": st.session_state.response_uuid,
         "submitted_at_utc": st.session_state.submitted_at_utc,
         "app_version": APP_VERSION,
+        **config.instrument_metadata(),
         "age_range": demographics.get("age_range", ""),
         "residence_region": demographics.get("residence_region", ""),
         "residence_district": demographics.get("residence_district", ""),

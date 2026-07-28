@@ -6,6 +6,7 @@ import uuid
 
 import pytest
 
+import config
 from questions import QUESTIONS
 from scoring import QUESTION_IDS, calculate_scores
 from storage.google_sheets import (
@@ -27,6 +28,7 @@ class FakeWorksheet:
             else ([self.headers[0]] if self.headers else [])
         )
         self.appended = []
+        self.updated_cells = []
         self.fail_after_append_once = fail_after_append_once
 
     def row_values(self, row):
@@ -50,6 +52,11 @@ class FakeWorksheet:
             self.fail_after_append_once = False
             raise TimeoutError("confirmación ambigua")
 
+    def update_cell(self, row, column, value):
+        self.updated_cells.append((row, column, value))
+        if row == 1 and column == len(self.headers) + 1:
+            self.headers.append(value)
+
 
 def response_record():
     answers = {question_id: 3 for question_id in QUESTION_IDS}
@@ -58,6 +65,7 @@ def response_record():
         "response_uuid": str(uuid.uuid4()),
         "submitted_at_utc": "2026-07-27T12:00:00+00:00",
         "app_version": "1.0",
+        **config.instrument_metadata(),
         "age_range": "25 a 34 años",
         "residence_region": "Panamá",
         "residence_district": "Panamá",
@@ -104,11 +112,19 @@ def test_response_headers_contain_each_question_once_and_no_email():
         QUESTION_IDS
     )
     assert "email" not in RESPONSE_HEADERS
+    assert RESPONSE_HEADERS[-1] == "instrument_version"
+    assert RESPONSE_HEADERS.count("instrument_version") == 1
 
 
 def test_subscriber_headers_contain_no_political_or_demographic_data():
     assert SUBSCRIBER_HEADERS == ("email", "consent_date", "source", "status")
-    forbidden = {"response_uuid", "age_range", "residence_district", *QUESTION_IDS}
+    forbidden = {
+        "response_uuid",
+        "instrument_version",
+        "age_range",
+        "residence_district",
+        *QUESTION_IDS,
+    }
     assert forbidden.isdisjoint(SUBSCRIBER_HEADERS)
 
 
@@ -132,6 +148,21 @@ def test_empty_response_sheet_receives_headers_then_row():
     assert len(worksheet.appended) == 2
 
 
+def test_legacy_response_sheet_only_receives_new_header_at_the_end():
+    legacy_headers = RESPONSE_HEADERS[:-1]
+    worksheet = FakeWorksheet(legacy_headers)
+    record = response_record()
+    configured, selected = configured_patches(worksheet)
+    with configured, selected:
+        result = save_anonymous_response(record)
+    assert result.success
+    assert worksheet.updated_cells == [
+        (1, len(RESPONSE_HEADERS), "instrument_version")
+    ]
+    assert worksheet.headers == list(RESPONSE_HEADERS)
+    assert worksheet.appended == [[record[header] for header in RESPONSE_HEADERS]]
+
+
 @pytest.mark.parametrize(
     "mutation",
     [
@@ -141,6 +172,7 @@ def test_empty_response_sheet_receives_headers_then_row():
         lambda record: record.update(age_range="desconocido"),
         lambda record: record.update(residence_district="inventado"),
         lambda record: record.update(political_x=101),
+        lambda record: record.update(instrument_version="beta-otra"),
         lambda record: record.update(extra_field="no permitido"),
     ],
 )

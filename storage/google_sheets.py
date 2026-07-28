@@ -18,6 +18,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import streamlit as st
 
+import config
 from demographics import ALL_RESIDENCE_OPTIONS, is_valid_age_range
 
 
@@ -47,6 +48,7 @@ RESPONSE_HEADERS = (
     "social_intensity",
     "security_score",
     "partisanship_score",
+    "instrument_version",
 )
 SUBSCRIBER_HEADERS = ("email", "consent_date", "source", "status")
 
@@ -166,6 +168,21 @@ def _ensure_headers(worksheet, expected_headers):
         raise HeaderMismatchError("Los encabezados no coinciden.")
 
 
+def _ensure_response_headers(worksheet):
+    """Añade solo la nueva cabecera; no etiqueta respuestas históricas."""
+    current_headers = tuple(worksheet.row_values(1))
+    if not current_headers:
+        worksheet.append_row(list(RESPONSE_HEADERS), value_input_option="RAW")
+        return
+    if current_headers == RESPONSE_HEADERS:
+        return
+    legacy_headers = RESPONSE_HEADERS[:-1]
+    if current_headers == legacy_headers:
+        worksheet.update_cell(1, len(RESPONSE_HEADERS), "instrument_version")
+        return
+    raise HeaderMismatchError("Los encabezados no coinciden.")
+
+
 def response_uuid_exists(worksheet, response_uuid):
     """Busca el identificador únicamente en su columna contractual."""
     headers = tuple(worksheet.row_values(1))
@@ -225,6 +242,7 @@ def _validate_response(record):
     for field in (
         "submitted_at_utc",
         "app_version",
+        "instrument_version",
         "age_range",
         "residence_region",
         "residence_district",
@@ -235,6 +253,8 @@ def _validate_response(record):
     ):
         if not isinstance(record[field], str) or not record[field].strip():
             raise InvalidRecordError(f"{field} es obligatorio.")
+    if record["instrument_version"] != config.INSTRUMENT_VERSION:
+        raise InvalidRecordError("La versión del instrumento no es válida.")
     if not is_valid_age_range(record["age_range"]):
         raise InvalidRecordError("El rango de edad no es válido.")
     valid_residence = any(
@@ -276,7 +296,7 @@ def save_anonymous_response(record: dict) -> SaveResult:
         def append_response():
             with _RESPONSE_APPEND_LOCK:
                 worksheet = _worksheet("responses")
-                _ensure_headers(worksheet, RESPONSE_HEADERS)
+                _ensure_response_headers(worksheet)
                 response_uuid = str(record["response_uuid"])
                 if response_uuid_exists(worksheet, response_uuid):
                     return SaveResult(
