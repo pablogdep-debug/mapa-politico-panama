@@ -44,7 +44,7 @@ QUESTIONS = [
     },
     {
         "id": "q10",
-        "text": "Si un político cumple con obras a su comunidad, es razonable reelegirlo, aunque lleve muchos años en la política.",
+        "text": "Prefiero que el gobierno respete los procedimientos y controles, aunque eso haga más lenta la ejecución de obras y soluciones.",
     },
     {
         "id": "q11",

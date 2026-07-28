@@ -1,4 +1,4 @@
-"""Regresiones para los textos 2.0 y la polaridad corregida de q16."""
+"""Regresiones de los textos y del balance del eje de estilo político."""
 
 import ast
 from pathlib import Path
@@ -18,7 +18,7 @@ EXPECTED_TEXTS = (
     "En los puestos públicos, la preparación debe pesar más que la confianza política, aunque el elegido venga de la oposición.",
     "Las leyes y la educación deberían reflejar los valores religiosos y las costumbres de Panamá, aunque no todos los compartan.",
     "La delincuencia se reduce más con educación, empleo y deporte para los jóvenes que con mano dura, aunque los resultados tarden más.",
-    "Si un político cumple con obras a su comunidad, es razonable reelegirlo, aunque lleve muchos años en la política.",
+    "Prefiero que el gobierno respete los procedimientos y controles, aunque eso haga más lenta la ejecución de obras y soluciones.",
     "Ningún partido debería tener mi voto asegurado: debe ganárselo en cada elección, aunque me haya representado bien antes.",
     "El gobierno debe poder ponerles reglas estrictas a industrias como la minería, aunque eso limite decisiones de las empresas.",
     "El Estado debería darle un reconocimiento especial a la familia tradicional, aunque los demás modelos de familia también tengan protección legal.",
@@ -79,6 +79,25 @@ def x_score(question_id, value):
     return calculate_scores(answers)["x"]
 
 
+def effective_style_poles():
+    """Agrupa los ítems por su efecto numérico después de la recodificación."""
+    rules_and_merit = []
+    results_and_loyalties = []
+    style_axis = AXES["x"]
+
+    for side, base_direction in (("positive", 1), ("opposite", -1)):
+        for question_id in style_axis[side]:
+            direction = -base_direction if question_id in REVERSE_SCORED_IDS else base_direction
+            target = rules_and_merit if direction > 0 else results_and_loyalties
+            target.append(question_id)
+
+    order = {question_id: index for index, question_id in enumerate(QUESTION_IDS)}
+    return {
+        "rules_and_merit": tuple(sorted(rules_and_merit, key=order.get)),
+        "results_and_loyalties": tuple(sorted(results_and_loyalties, key=order.get)),
+    }
+
+
 def constant_from_app(name):
     tree = ast.parse(Path("app.py").read_text(encoding="utf-8"))
     for node in tree.body:
@@ -102,7 +121,15 @@ class QuestionnaireV2Tests(unittest.TestCase):
 
     def test_axis_membership_and_all_other_polarities_are_unchanged(self):
         self.assertEqual(AXES, EXPECTED_AXES)
-        self.assertEqual(REVERSE_SCORED_IDS, frozenset({"q16"}))
+        self.assertEqual(REVERSE_SCORED_IDS, frozenset({"q10", "q16"}))
+
+    def test_style_axis_has_two_unique_questions_per_pole(self):
+        poles = effective_style_poles()
+        self.assertEqual(poles["rules_and_merit"], ("q07", "q10"))
+        self.assertEqual(poles["results_and_loyalties"], ("q02", "q16"))
+        all_ids = poles["rules_and_merit"] + poles["results_and_loyalties"]
+        self.assertEqual(len(all_ids), 4)
+        self.assertEqual(len(set(all_ids)), 4)
 
     def test_q16_neutral_is_neutral(self):
         self.assertEqual(x_score("q16", 3), 0.0)
@@ -124,8 +151,8 @@ class QuestionnaireV2Tests(unittest.TestCase):
         self.assertEqual(x_score("q07", 5), 25.0)
         self.assertEqual(x_score("q16", 5), -25.0)
 
-    def test_q02_q10_and_q16_agreement_share_favors_direction(self):
-        for question_id in ("q02", "q10", "q16"):
+    def test_q02_and_q16_agreement_share_results_direction(self):
+        for question_id in ("q02", "q16"):
             with self.subTest(question_id=question_id):
                 self.assertEqual(x_score(question_id, 5), -25.0)
 
@@ -136,8 +163,34 @@ class QuestionnaireV2Tests(unittest.TestCase):
         }
         self.assertEqual(set(effects.values()), {12.5})
 
-    def test_new_records_use_version_2(self):
-        self.assertEqual(constant_from_app("APP_VERSION"), "2.0")
+    def test_q10_neutral_is_neutral(self):
+        self.assertEqual(x_score("q10", 3), 0.0)
+
+    def test_q10_agreement_increases_rules_and_merit(self):
+        self.assertEqual(x_score("q10", 4), 12.5)
+        self.assertEqual(x_score("q10", 5), 25.0)
+
+    def test_q10_disagreement_increases_results_and_loyalties(self):
+        self.assertEqual(x_score("q10", 2), -12.5)
+        self.assertEqual(x_score("q10", 1), -25.0)
+
+    def test_q10_is_symmetric_and_monotonic(self):
+        observed = [x_score("q10", value) for value in range(1, 6)]
+        self.assertEqual(observed, [-25.0, -12.5, 0.0, 12.5, 25.0])
+        self.assertEqual(observed, sorted(observed))
+        self.assertEqual(abs(observed[0]), abs(observed[-1]))
+
+    def test_q07_and_q10_agreement_share_rules_direction(self):
+        self.assertEqual(x_score("q07", 5), 25.0)
+        self.assertEqual(x_score("q10", 5), 25.0)
+
+    def test_q10_agreement_opposes_q02_and_q16_agreement(self):
+        self.assertEqual(x_score("q10", 5), 25.0)
+        self.assertEqual(x_score("q02", 5), -25.0)
+        self.assertEqual(x_score("q16", 5), -25.0)
+
+    def test_new_records_use_version_2_1(self):
+        self.assertEqual(constant_from_app("APP_VERSION"), "2.1")
 
 
 if __name__ == "__main__":

@@ -8,8 +8,9 @@ los gráficos y las interpretaciones pertenecen a etapas posteriores.
 # Estas son las 24 respuestas que debe recibir el cálculo.
 QUESTION_IDS = tuple(f"q{number:02d}" for number in range(1, 25))
 
-# q16 conserva su eje y peso, pero su nueva redacción apunta al polo contrario.
-REVERSE_SCORED_IDS = frozenset({"q16"})
+# q16 conserva su recodificación vigente. La nueva q10 se invierte para que
+# el acuerdo apunte hacia reglas y mérito sin alterar su peso.
+REVERSE_SCORED_IDS = frozenset({"q10", "q16"})
 
 
 # Las claves coinciden con las usadas en la guía: x, y y cuatro distintivos.

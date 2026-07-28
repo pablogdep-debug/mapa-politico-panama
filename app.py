@@ -50,7 +50,7 @@ st.set_page_config(
 )
 
 PUBLIC_APP_URL = "https://brujula-politica-panama.streamlit.app"
-APP_VERSION = "2.0"
+APP_VERSION = "2.1"
 LOGO_PATH = Path("assets/brujula.png")
 LOGO_ALT = (
     "Brújula Democrática — Movimiento de inteligencia participativa "
