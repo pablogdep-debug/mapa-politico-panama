@@ -32,7 +32,7 @@ QUESTIONS = [
     },
     {
         "id": "q07",
-        "text": "Si estuviera en mis manos decidir los cargos de dirección del gobierno, nombraría a personas de confianza capaces de ejecutar el plan político, aunque otras tuvieran mejor preparación técnica.",
+        "text": "Si estuviera en mis manos decidir los cargos de dirección del gobierno, preferiría nombrar a personas de confianza que compartan el proyecto político antes que a otras con mayor preparación técnica.",
     },
     {
         "id": "q08",

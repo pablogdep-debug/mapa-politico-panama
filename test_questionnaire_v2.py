@@ -15,7 +15,7 @@ EXPECTED_TEXTS = (
     "En las comunidades más violentas, recuperar el orden va primero, aunque por un tiempo se posterguen los programas sociales y de empleo.",
     "Podría votar por candidatos de partidos distintos si me parecen los más capaces.",
     "El gobierno debería intervenir menos en la economía, aunque eso signifique menos subsidios y menos incentivos.",
-    "Si estuviera en mis manos decidir los cargos de dirección del gobierno, nombraría a personas de confianza capaces de ejecutar el plan político, aunque otras tuvieran mejor preparación técnica.",
+    "Si estuviera en mis manos decidir los cargos de dirección del gobierno, preferiría nombrar a personas de confianza que compartan el proyecto político antes que a otras con mayor preparación técnica.",
     "Las leyes y la educación deberían reflejar los valores religiosos y las costumbres de Panamá, aunque no todos los compartan.",
     "La delincuencia se reduce más con educación, empleo y deporte para los jóvenes que con mano dura, aunque los resultados tarden más.",
     "Cuando una comunidad lleva años esperando una obra, es razonable comenzarla antes de completar todos los trámites, siempre que no se comprometan la seguridad ni el presupuesto.",
