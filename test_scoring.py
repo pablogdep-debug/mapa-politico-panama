@@ -30,16 +30,20 @@ class ScoringTests(unittest.TestCase):
             {axis_id: 0.0 for axis_id in AXES},
         )
 
-    def test_all_answers_at_one_give_zero(self):
+    def test_all_answers_at_one_give_positive_x_only(self):
+        expected = {axis_id: 0.0 for axis_id in AXES}
+        expected["x"] = 100.0
         self.assertEqual(
             calculate_scores(answers_with(1)),
-            {axis_id: 0.0 for axis_id in AXES},
+            expected,
         )
 
-    def test_all_answers_at_five_give_zero(self):
+    def test_all_answers_at_five_give_negative_x_only(self):
+        expected = {axis_id: 0.0 for axis_id in AXES}
+        expected["x"] = -100.0
         self.assertEqual(
             calculate_scores(answers_with(5)),
-            {axis_id: 0.0 for axis_id in AXES},
+            expected,
         )
 
     def test_clearly_positive_profile_in_each_axis(self):
@@ -81,14 +85,14 @@ class ScoringTests(unittest.TestCase):
                 self.assertEqual(calculate_scores(answers), expected)
 
     def test_result_matches_a_manual_calculation(self):
-        # Grupo positivo efectivo: (5 + (6 - 4)) / 2 = 3.5
-        # Grupo contrario efectivo: (2 + (6 - 4)) / 2 = 2.0
-        # ((3.5 - 2.0) / 4) * 100 = 37.5
+        # Grupo positivo efectivo: ((6 - 5) + (6 - 4)) / 2 = 1.5
+        # Grupo contrario efectivo: (2 + 4) / 2 = 3.0
+        # ((1.5 - 3.0) / 4) * 100 = -37.5
         answers = answers_with(3)
         answers.update({"q07": 5, "q16": 4, "q02": 2, "q10": 4})
         self.assertEqual(
             calculate_axis(answers, ("q07", "q16"), ("q02", "q10")),
-            37.5,
+            -37.5,
         )
 
     def test_all_six_axes_match_manual_calculations(self):
@@ -96,7 +100,7 @@ class ScoringTests(unittest.TestCase):
 
         # Diferencias manuales: 4, 2, 1, -1, -2 y -4.
         settings = {
-            "x": ((5, 1), (1, 5)),
+            "x": ((1, 1), (1, 1)),
             "y": ((4, 4), (2, 2)),
             "seguridad": ((4, 3), (2, 3)),
             "familia": ((2, 3), (4, 3)),

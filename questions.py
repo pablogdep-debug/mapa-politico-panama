@@ -32,7 +32,7 @@ QUESTIONS = [
     },
     {
         "id": "q07",
-        "text": "En los puestos públicos, la preparación debe pesar más que la confianza política, aunque el elegido venga de la oposición.",
+        "text": "Si estuviera en mis manos decidir los cargos de dirección del gobierno, nombraría a personas de confianza capaces de ejecutar el plan político, aunque otras tuvieran mejor preparación técnica.",
     },
     {
         "id": "q08",
@@ -44,11 +44,11 @@ QUESTIONS = [
     },
     {
         "id": "q10",
-        "text": "Prefiero que el gobierno respete los procedimientos y controles, aunque eso haga más lenta la ejecución de obras y soluciones.",
+        "text": "Cuando una comunidad lleva años esperando una obra, es razonable comenzarla antes de completar todos los trámites, siempre que no se comprometan la seguridad ni el presupuesto.",
     },
     {
         "id": "q11",
-        "text": "Ningún partido debería tener mi voto asegurado: debe ganárselo en cada elección, aunque me haya representado bien antes.",
+        "text": "Ningún partido tiene mi voto asegurado. Debe ganárselo en cada elección, sin importar lo bien que me haya representado en el pasado.",
     },
     {
         "id": "q12",
@@ -68,7 +68,7 @@ QUESTIONS = [
     },
     {
         "id": "q16",
-        "text": "Es entendible que quien trabajó en una campaña espere un puesto en el gobierno que ayudó a elegir.",
+        "text": "Me parece normal que un gobierno dé prioridad para algunos puestos a quienes trabajaron en su campaña, aunque haya otras personas igualmente calificadas que no participaron.",
     },
     {
         "id": "q17",
@@ -80,7 +80,7 @@ QUESTIONS = [
     },
     {
         "id": "q19",
-        "text": "Prefiero pagar menos impuestos, aunque haya menos mantenimiento de calles, menos inversión en escuelas y servicios más limitados.",
+        "text": "Prefiero que no suban los impuestos, aunque tenga que pagar por mi cuenta algunos servicios cuando los necesite.",
     },
     {
         "id": "q20",

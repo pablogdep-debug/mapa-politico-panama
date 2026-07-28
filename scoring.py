@@ -8,9 +8,10 @@ los gráficos y las interpretaciones pertenecen a etapas posteriores.
 # Estas son las 24 respuestas que debe recibir el cálculo.
 QUESTION_IDS = tuple(f"q{number:02d}" for number in range(1, 25))
 
-# q16 conserva su recodificación vigente. La nueva q10 se invierte para que
-# el acuerdo apunte hacia reglas y mérito sin alterar su peso.
-REVERSE_SCORED_IDS = frozenset({"q10", "q16"})
+# q07 y q16 están en la lista técnica positiva, pero sus textos expresan
+# confianza o reciprocidad política. Se invierten una sola vez para que el
+# acuerdo con cualquiera de los cuatro ítems del eje X apunte al polo negativo.
+REVERSE_SCORED_IDS = frozenset({"q07", "q16"})
 
 
 # Las claves coinciden con las usadas en la guía: x, y y cuatro distintivos.
