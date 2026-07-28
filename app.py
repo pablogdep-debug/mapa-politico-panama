@@ -26,6 +26,13 @@ from interpretations import classify_position, describe
 from nuances import build_nuance_bar
 from plotting import create_map, create_social_map
 from questions import QUESTIONS
+from response_quality import (
+    INVALID_COMPLETION_MESSAGE,
+    can_persist_response,
+    reset_response_quality,
+    start_questionnaire_timer,
+    validate_completion_time,
+)
 from scoring import calculate_scores
 from shared_results import (
     build_share_url,
@@ -1175,6 +1182,9 @@ def initialize_state():
         "submission_status": SUBMISSION_IDLE,
         "submission_message": "",
         "submitted_at_utc": None,
+        "questionnaire_started_at": None,
+        "completion_time_validated": False,
+        "invalid_completion": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -1201,6 +1211,7 @@ def reset_questionnaire():
     st.session_state.email_submitted = False
     st.session_state.email_save_message = ""
     reset_submission(st.session_state)
+    reset_response_quality(st.session_state)
 
 
 def start_own_questionnaire():
@@ -1380,6 +1391,8 @@ def render_question():
     """Muestra una sola pregunta y conserva su respuesta por ID."""
     total = len(QUESTIONS)
     index = st.session_state.current_question
+    if index == 0:
+        start_questionnaire_timer(st.session_state)
     question = QUESTIONS[index]
     question_id = question["id"]
     selected_value = st.session_state.answers.get(question_id)
@@ -2200,6 +2213,8 @@ def build_anonymous_response_record(scores):
 
 def save_current_response(scores, *, allow_retry=False):
     """Intenta guardar una sola vez; un fallo queda disponible para reintento."""
+    if not can_persist_response(st.session_state):
+        return
     status = st.session_state.submission_status
     if not can_start_submission(status, allow_retry=allow_retry):
         return
@@ -2235,11 +2250,27 @@ def render_response_save_status(scores):
 
 def render_results():
     """Calcula la sesión actual y delega su presentación sin alterar la fórmula."""
+    if not can_persist_response(st.session_state):
+        render_invalid_completion()
+        return
     numeric_answers = dict(st.session_state.answers)
     scores = calculate_scores(numeric_answers)
     save_current_response(scores)
     render_response_save_status(scores)
     render_result_report(scores)
+
+
+def render_invalid_completion():
+    """Muestra exclusivamente el rechazo metodológico y un reinicio completo."""
+    st.error(INVALID_COMPLETION_MESSAGE)
+    st.button(
+        "Volver a completar el cuestionario",
+        on_click=reset_questionnaire,
+        type="primary",
+        width="stretch",
+        key="restart_invalid_completion",
+    )
+    st.stop()
 
 
 def shared_result_from_query():
@@ -2266,6 +2297,8 @@ elif not st.session_state.show_results:
         render_demographics()
     else:
         render_question()
+elif not validate_completion_time(st.session_state):
+    render_invalid_completion()
 elif not st.session_state.analysis_complete:
     render_analysis()
 else:
