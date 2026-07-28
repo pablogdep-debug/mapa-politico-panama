@@ -5,10 +5,10 @@ PATREON_URL = "https://www.patreon.com/BrujulaDemocratica"
 INSTRUMENT_VERSION = "beta-1.0.4"
 
 
-def instrument_version_display_text():
+def instrument_version_display_text() -> str:
     """Convierte la versión interna en el texto discreto de la portada."""
-    visible_version = INSTRUMENT_VERSION.replace("-", " ", 1)
-    return f"Brújula Democrática · Versión {visible_version}"
+    version_number = INSTRUMENT_VERSION.removeprefix("beta-")
+    return f"Brújula Democrática · Versión beta {version_number}"
 
 
 def instrument_metadata():
