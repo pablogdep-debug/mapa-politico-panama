@@ -56,7 +56,7 @@ QUESTIONS = [
     },
     {
         "id": "q13",
-        "text": "El Estado debería darle un reconocimiento especial a la familia tradicional, aunque los demás modelos de familia también tengan protección legal.",
+        "text": "El Estado debería darle un reconocimiento especial a la familia tradicional por encima de otros modelos de familia.",
     },
     {
         "id": "q14",
@@ -68,7 +68,7 @@ QUESTIONS = [
     },
     {
         "id": "q16",
-        "text": "Me parece normal que un gobierno dé prioridad para algunos puestos a quienes trabajaron en su campaña, aunque haya otras personas igualmente calificadas que no participaron.",
+        "text": "Me parece normal que un gobierno dé prioridad para algunos puestos a quienes trabajaron en su campaña.",
     },
     {
         "id": "q17",
@@ -84,7 +84,7 @@ QUESTIONS = [
     },
     {
         "id": "q20",
-        "text": "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas, aunque algunos prefieran una vida pública más neutral.",
+        "text": "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas. Ellas merecen ser conservadas y protegidas.",
     },
     {
         "id": "q21",

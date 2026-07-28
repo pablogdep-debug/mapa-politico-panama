@@ -21,14 +21,14 @@ EXPECTED_TEXTS = (
     "Cuando una comunidad lleva años esperando una obra, es razonable comenzarla antes de completar todos los trámites, siempre que no se comprometan la seguridad ni el presupuesto.",
     "Ningún partido tiene mi voto asegurado. Debe ganárselo en cada elección, sin importar lo bien que me haya representado en el pasado.",
     "El gobierno debe poder ponerles reglas estrictas a industrias como la minería, aunque eso limite decisiones de las empresas.",
-    "El Estado debería darle un reconocimiento especial a la familia tradicional, aunque los demás modelos de familia también tengan protección legal.",
+    "El Estado debería darle un reconocimiento especial a la familia tradicional por encima de otros modelos de familia.",
     "La policía necesita más autoridad para detener y requisar ante sospechas, aunque aumente el riesgo de revisar a personas inocentes.",
     "Panamá debería adoptar las nuevas tecnologías con rapidez, aunque algunos empleos tradicionales desaparezcan.",
-    "Me parece normal que un gobierno dé prioridad para algunos puestos a quienes trabajaron en su campaña, aunque haya otras personas igualmente calificadas que no participaron.",
+    "Me parece normal que un gobierno dé prioridad para algunos puestos a quienes trabajaron en su campaña.",
     "Si un partido representa mis ideas, vale mantenerle la lealtad aunque no me convenzan todos sus candidatos.",
     "El Estado no debería meterse en cómo los adultos viven, forman pareja o crean familia, mientras no dañen a nadie.",
     "Prefiero que no suban los impuestos, aunque tenga que pagar por mi cuenta algunos servicios cuando los necesite.",
-    "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas, aunque algunos prefieran una vida pública más neutral.",
+    "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas. Ellas merecen ser conservadas y protegidas.",
     "Darle demasiado poder a las fuerzas de seguridad termina afectando a personas inocentes.",
     "Aceptaría pagar más impuestos si eso mejora la educación, la salud y los servicios públicos.",
     "El Estado debe fijar límites morales en temas que afectan a los menores, como la educación sexual, aunque algunas familias prefieran decidir solas.",
@@ -207,6 +207,20 @@ class QuestionnaireV2Tests(unittest.TestCase):
                 answers = neutral_answers()
                 answers["q19"] = value
                 self.assertEqual(calculate_scores(answers)["y"], contribution)
+
+    def test_q13_keeps_its_traditional_family_direction(self):
+        answers = neutral_answers()
+        answers["q13"] = 1
+        self.assertEqual(calculate_scores(answers)["familia"], 25.0)
+        answers["q13"] = 5
+        self.assertEqual(calculate_scores(answers)["familia"], -25.0)
+
+    def test_q20_keeps_its_tradition_and_religion_direction(self):
+        answers = neutral_answers()
+        answers["q20"] = 1
+        self.assertEqual(calculate_scores(answers)["modernidad"], 25.0)
+        answers["q20"] = 5
+        self.assertEqual(calculate_scores(answers)["modernidad"], -25.0)
 
     def test_new_records_use_version_2_2(self):
         self.assertEqual(constant_from_app("APP_VERSION"), "2.2")

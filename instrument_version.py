@@ -1,7 +1,7 @@
 """Fuente única de la versión del instrumento político."""
 
 
-INSTRUMENT_VERSION = "beta-1.0.4"
+INSTRUMENT_VERSION = "beta-1.0.5"
 
 
 def instrument_version_display_text() -> str:
