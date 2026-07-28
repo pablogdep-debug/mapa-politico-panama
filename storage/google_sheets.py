@@ -18,8 +18,8 @@ import gspread
 from google.oauth2.service_account import Credentials
 import streamlit as st
 
-import config
 from demographics import ALL_RESIDENCE_OPTIONS, is_valid_age_range
+import instrument_version
 
 
 LOGGER = logging.getLogger(__name__)
@@ -253,7 +253,7 @@ def _validate_response(record):
     ):
         if not isinstance(record[field], str) or not record[field].strip():
             raise InvalidRecordError(f"{field} es obligatorio.")
-    if record["instrument_version"] != config.INSTRUMENT_VERSION:
+    if record["instrument_version"] != instrument_version.INSTRUMENT_VERSION:
         raise InvalidRecordError("La versión del instrumento no es válida.")
     if not is_valid_age_range(record["age_range"]):
         raise InvalidRecordError("El rango de edad no es válido.")

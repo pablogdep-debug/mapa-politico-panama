@@ -6,7 +6,7 @@ import uuid
 
 import pytest
 
-import config
+import instrument_version
 from questions import QUESTIONS
 from scoring import QUESTION_IDS, calculate_scores
 from storage.google_sheets import (
@@ -65,7 +65,7 @@ def response_record():
         "response_uuid": str(uuid.uuid4()),
         "submitted_at_utc": "2026-07-27T12:00:00+00:00",
         "app_version": "1.0",
-        **config.instrument_metadata(),
+        **instrument_version.instrument_metadata(),
         "age_range": "25 a 34 años",
         "residence_region": "Panamá",
         "residence_district": "Panamá",

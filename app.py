@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import streamlit.components.v1 as components
 
-import config
 from config import PATREON_URL
 from demographics import (
     AGE_FIELD_ID,
@@ -24,6 +23,7 @@ from demographics import (
     is_valid_residence_option,
 )
 from interpretations import classify_position, describe
+import instrument_version
 from nuances import build_nuance_bar
 from plotting import create_map, create_social_map
 from questions import QUESTIONS
@@ -1402,7 +1402,7 @@ def render_cover():
         )
         st.markdown(
             '<p class="instrument-version">'
-            f"{html.escape(config.instrument_version_display_text())}"
+            f"{html.escape(instrument_version.instrument_version_display_text())}"
             "</p>",
             unsafe_allow_html=True,
         )
@@ -2211,7 +2211,7 @@ def build_anonymous_response_record(scores):
         "response_uuid": st.session_state.response_uuid,
         "submitted_at_utc": st.session_state.submitted_at_utc,
         "app_version": APP_VERSION,
-        **config.instrument_metadata(),
+        **instrument_version.instrument_metadata(),
         "age_range": demographics.get("age_range", ""),
         "residence_region": demographics.get("residence_region", ""),
         "residence_district": demographics.get("residence_district", ""),
