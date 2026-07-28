@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import logging
 import re
+import threading
 import time
 import uuid
 
@@ -56,6 +57,7 @@ _CONFIG_KEYS = (
     "subscribers_worksheet",
 )
 _EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+_RESPONSE_APPEND_LOCK = threading.Lock()
 
 
 @dataclass(frozen=True)
@@ -65,6 +67,12 @@ class SaveResult:
     success: bool
     already_exists: bool = False
     message: str = ""
+
+    @property
+    def status(self):
+        if not self.success:
+            return "failed"
+        return "already_exists" if self.already_exists else "saved"
 
 
 class StorageConfigurationError(RuntimeError):
@@ -89,14 +97,6 @@ def sanitize_cell(value):
 def normalize_email(email):
     """Normaliza el correo sin añadir información sobre la participación."""
     return email.strip().lower() if isinstance(email, str) else ""
-
-
-def apply_response_save_result(state, result):
-    """Marca como guardado únicamente un éxito real o un duplicado existente."""
-    state["response_save_attempted"] = True
-    state["response_save_message"] = result.message
-    if result.success:
-        state["response_saved"] = True
 
 
 def _secrets_section(name):
@@ -166,6 +166,19 @@ def _ensure_headers(worksheet, expected_headers):
         raise HeaderMismatchError("Los encabezados no coinciden.")
 
 
+def response_uuid_exists(worksheet, response_uuid):
+    """Busca el identificador únicamente en su columna contractual."""
+    headers = tuple(worksheet.row_values(1))
+    try:
+        uuid_column = headers.index("response_uuid") + 1
+    except ValueError as error:
+        raise HeaderMismatchError("Falta la columna response_uuid.") from error
+    existing_values = worksheet.col_values(uuid_column)
+    return str(response_uuid) in {
+        str(value) for value in existing_values[1:] if value
+    }
+
+
 def _is_temporary_error(error):
     return isinstance(
         error,
@@ -200,9 +213,11 @@ def _validate_response(record):
     if set(record) != set(RESPONSE_HEADERS):
         raise InvalidRecordError("La respuesta está incompleta o tiene campos extra.")
     try:
-        uuid.UUID(str(record["response_uuid"]))
+        parsed_uuid = uuid.UUID(str(record["response_uuid"]))
     except (ValueError, TypeError, AttributeError) as error:
         raise InvalidRecordError("El identificador de respuesta no es válido.") from error
+    if parsed_uuid.version != 4:
+        raise InvalidRecordError("El identificador de respuesta debe ser UUID versión 4.")
     for question_id in QUESTION_IDS:
         value = record[question_id]
         if isinstance(value, bool) or not isinstance(value, int) or value not in range(1, 6):
@@ -259,21 +274,22 @@ def save_anonymous_response(record: dict) -> SaveResult:
             raise StorageConfigurationError("Google Sheets no está configurado.")
 
         def append_response():
-            worksheet = _worksheet("responses")
-            _ensure_headers(worksheet, RESPONSE_HEADERS)
-            response_uuid = str(record["response_uuid"])
-            if response_uuid in worksheet.col_values(1)[1:]:
+            with _RESPONSE_APPEND_LOCK:
+                worksheet = _worksheet("responses")
+                _ensure_headers(worksheet, RESPONSE_HEADERS)
+                response_uuid = str(record["response_uuid"])
+                if response_uuid_exists(worksheet, response_uuid):
+                    return SaveResult(
+                        success=True,
+                        already_exists=True,
+                        message="Tu participación ya había sido registrada.",
+                    )
+                row = [sanitize_cell(record[header]) for header in RESPONSE_HEADERS]
+                worksheet.append_row(row, value_input_option="RAW")
                 return SaveResult(
                     success=True,
-                    already_exists=True,
-                    message="Tu participación ya había sido registrada.",
+                    message="Tu participación fue registrada correctamente.",
                 )
-            row = [sanitize_cell(record[header]) for header in RESPONSE_HEADERS]
-            worksheet.append_row(row, value_input_option="RAW")
-            return SaveResult(
-                success=True,
-                message="Tu participación fue registrada correctamente.",
-            )
 
         return _run_with_retry(append_response, "responses")
     except (InvalidRecordError, StorageConfigurationError, HeaderMismatchError):

@@ -5,7 +5,6 @@ import html
 import json
 import re
 import time
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -36,8 +35,18 @@ from shared_results import (
     whatsapp_share_url,
 )
 from social import classify_social_position, describe_social
+from submission import (
+    SUBMISSION_ERROR,
+    SUBMISSION_IDLE,
+    SUBMISSION_SUBMITTING,
+    SUBMISSION_SUCCESS,
+    apply_submission_result,
+    can_start_submission,
+    ensure_response_uuid,
+    reset_submission,
+    submission_button_disabled,
+)
 from storage.google_sheets import (
-    apply_response_save_result,
     save_anonymous_response,
     save_subscriber_email,
 )
@@ -1163,16 +1172,14 @@ def initialize_state():
         "email_submitted": False,
         "email_save_message": "",
         "response_uuid": None,
-        "response_saved": False,
-        "response_save_attempted": False,
-        "response_save_message": "",
+        "submission_status": SUBMISSION_IDLE,
+        "submission_message": "",
         "submitted_at_utc": None,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
-    if not st.session_state.response_uuid:
-        st.session_state.response_uuid = str(uuid.uuid4())
+    ensure_response_uuid(st.session_state)
 
 
 def reset_questionnaire():
@@ -1193,11 +1200,7 @@ def reset_questionnaire():
     st.session_state.analysis_complete = False
     st.session_state.email_submitted = False
     st.session_state.email_save_message = ""
-    st.session_state.response_uuid = str(uuid.uuid4())
-    st.session_state.response_saved = False
-    st.session_state.response_save_attempted = False
-    st.session_state.response_save_message = ""
-    st.session_state.submitted_at_utc = None
+    reset_submission(st.session_state)
 
 
 def start_own_questionnaire():
@@ -2195,24 +2198,38 @@ def build_anonymous_response_record(scores):
     }
 
 
-def save_current_response(scores):
+def save_current_response(scores, *, allow_retry=False):
     """Intenta guardar una sola vez; un fallo queda disponible para reintento."""
-    if st.session_state.response_saved or st.session_state.response_save_attempted:
+    status = st.session_state.submission_status
+    if not can_start_submission(status, allow_retry=allow_retry):
         return
-    result = save_anonymous_response(build_anonymous_response_record(scores))
-    apply_response_save_result(st.session_state, result)
+    st.session_state.submission_status = SUBMISSION_SUBMITTING
+    with st.spinner("Registrando tu participación…"):
+        result = save_anonymous_response(build_anonymous_response_record(scores))
+    apply_submission_result(st.session_state, result)
 
 
 def render_response_save_status(scores):
     """Informa del registro sin ocultar ni condicionar el resultado político."""
-    if st.session_state.response_saved:
-        st.success(st.session_state.response_save_message)
+    status = st.session_state.submission_status
+    if status == SUBMISSION_SUCCESS:
+        st.success(st.session_state.submission_message)
         return
 
-    st.warning(st.session_state.response_save_message)
-    if st.button("Intentar registrar nuevamente", key="retry_response_save"):
-        st.session_state.response_save_attempted = False
-        save_current_response(scores)
+    if status == SUBMISSION_SUBMITTING:
+        st.info("Estamos registrando tu participación.")
+        return
+
+    if status != SUBMISSION_ERROR:
+        return
+
+    st.warning(st.session_state.submission_message)
+    if st.button(
+        "Intentar registrar nuevamente",
+        key="retry_response_save",
+        disabled=submission_button_disabled(status),
+    ):
+        save_current_response(scores, allow_retry=True)
         st.rerun()
 
 

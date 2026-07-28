@@ -1,5 +1,6 @@
 """Pruebas sin red para el contrato privado de Google Sheets."""
 
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 import uuid
 
@@ -10,8 +11,7 @@ from scoring import QUESTION_IDS, calculate_scores
 from storage.google_sheets import (
     RESPONSE_HEADERS,
     SUBSCRIBER_HEADERS,
-    SaveResult,
-    apply_response_save_result,
+    response_uuid_exists,
     sanitize_cell,
     save_anonymous_response,
     save_subscriber_email,
@@ -19,10 +19,15 @@ from storage.google_sheets import (
 
 
 class FakeWorksheet:
-    def __init__(self, headers=(), first_column=()):
+    def __init__(self, headers=(), first_column=(), fail_after_append_once=False):
         self.headers = list(headers)
-        self.first_column = list(first_column)
+        self.first_column = (
+            list(first_column)
+            if first_column
+            else ([self.headers[0]] if self.headers else [])
+        )
         self.appended = []
+        self.fail_after_append_once = fail_after_append_once
 
     def row_values(self, row):
         assert row == 1
@@ -41,6 +46,9 @@ class FakeWorksheet:
             self.headers = list(row)
         elif row:
             self.first_column.append(row[0])
+        if self.fail_after_append_once:
+            self.fail_after_append_once = False
+            raise TimeoutError("confirmación ambigua")
 
 
 def response_record():
@@ -160,6 +168,58 @@ def test_duplicate_response_uuid_does_not_append():
     assert worksheet.appended == []
 
 
+def test_uuid_lookup_uses_the_contract_column_only():
+    response_uuid = str(uuid.uuid4())
+    worksheet = FakeWorksheet(
+        RESPONSE_HEADERS,
+        ("response_uuid", response_uuid),
+    )
+    assert response_uuid_exists(worksheet, response_uuid)
+
+
+def test_repeated_save_with_same_uuid_produces_exactly_one_row():
+    worksheet = FakeWorksheet(RESPONSE_HEADERS)
+    record = response_record()
+    configured, selected = configured_patches(worksheet)
+    with configured, selected:
+        first = save_anonymous_response(record)
+        second = save_anonymous_response(record)
+    assert first.status == "saved"
+    assert second.status == "already_exists"
+    assert len(worksheet.appended) == 1
+
+
+def test_concurrent_calls_with_same_uuid_produce_exactly_one_row():
+    worksheet = FakeWorksheet(RESPONSE_HEADERS)
+    record = response_record()
+    configured, selected = configured_patches(worksheet)
+    with configured, selected:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(
+                executor.map(
+                    lambda _: save_anonymous_response(record),
+                    range(2),
+                )
+            )
+    assert sorted(result.status for result in results) == [
+        "already_exists",
+        "saved",
+    ]
+    assert len(worksheet.appended) == 1
+
+
+def test_retry_after_ambiguous_timeout_detects_existing_uuid():
+    worksheet = FakeWorksheet(
+        RESPONSE_HEADERS,
+        fail_after_append_once=True,
+    )
+    configured, selected = configured_patches(worksheet)
+    with configured, selected, patch("storage.google_sheets.time.sleep"):
+        result = save_anonymous_response(response_record())
+    assert result.status == "already_exists"
+    assert len(worksheet.appended) == 1
+
+
 def test_email_is_normalized_and_saved_without_other_data():
     worksheet = FakeWorksheet(SUBSCRIBER_HEADERS)
     configured, selected = configured_patches(worksheet)
@@ -191,24 +251,6 @@ def test_missing_configuration_fails_safely():
         email_result = save_subscriber_email("persona@ejemplo.com")
     assert not response_result.success
     assert not email_result.success
-
-
-def test_failed_save_does_not_mark_response_as_saved():
-    state = {"response_saved": False}
-    apply_response_save_result(state, SaveResult(False, message="falló"))
-    assert state["response_save_attempted"]
-    assert not state["response_saved"]
-
-
-@pytest.mark.parametrize("already_exists", [False, True])
-def test_successful_or_existing_save_marks_response_as_saved(already_exists):
-    state = {"response_saved": False}
-    apply_response_save_result(
-        state,
-        SaveResult(True, already_exists=already_exists, message="listo"),
-    )
-    assert state["response_save_attempted"]
-    assert state["response_saved"]
 
 
 @pytest.mark.parametrize("prefix", ["=", "+", "-", "@"])
