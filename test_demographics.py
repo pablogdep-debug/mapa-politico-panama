@@ -128,7 +128,7 @@ class DemographicDataTests(unittest.TestCase):
             for number, question in enumerate(QUESTIONS, 1)
         }
         expected = {
-            "x": 37.5,
+            "x": 12.5,
             "y": -37.5,
             "seguridad": -12.5,
             "familia": 0.0,

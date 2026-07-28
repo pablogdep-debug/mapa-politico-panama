@@ -8,99 +8,99 @@ Este archivo solo guarda datos. Los cálculos se agregarán en otra etapa.
 QUESTIONS = [
     {
         "id": "q01",
-        "text": "La ciencia y la evidencia técnica deberían pesar mucho en las decisiones públicas, incluso cuando la solución más eficiente no guste a la comunidad afectada. Por ejemplo, un hospital puede ubicarse donde atienda a más personas, aunque los vecinos del lugar escogido se opongan.",
+        "text": "Las decisiones públicas deberían basarse en la ciencia y la evidencia, aunque la solución más eficiente no le guste a la comunidad afectada.",
     },
     {
         "id": "q02",
-        "text": "Un buen político debe atender las necesidades inmediatas de su gente. Puede responder a urgencias, apoyar a damnificados o ayudar a familias en dificultades, aunque eso deje menos tiempo y recursos para proyectos de largo plazo, como trabajar en comisiones, elaborar planes estratégicos o crear nuevas leyes.",
+        "text": "Prefiero un político que resuelva las urgencias de su gente hoy, aunque le quede menos tiempo para planes y leyes de largo plazo.",
     },
     {
         "id": "q03",
-        "text": "Todas las familias, formadas por parejas heterosexuales u homosexuales, deberían recibir los mismos derechos y el mismo reconocimiento del Estado. Esto puede exigir cambios en normas tradicionales sobre el matrimonio y la familia.",
+        "text": "Todas las familias —heterosexuales u homosexuales— deberían tener los mismos derechos, aunque eso cambie normas tradicionales sobre el matrimonio.",
     },
     {
         "id": "q04",
-        "text": "En comunidades con altos niveles de violencia, recuperar el orden debe ser la primera prioridad. Durante un tiempo, eso puede dejar en segundo plano la lucha contra la pobreza, las mejoras educativas y la creación de oportunidades de empleo.",
+        "text": "En las comunidades más violentas, recuperar el orden va primero, aunque por un tiempo se posterguen los programas sociales y de empleo.",
     },
     {
         "id": "q05",
-        "text": "No tendría problema en votar por candidatos de distintos partidos si considero que son las personas más capaces. Lo haría aunque eso produzca un gobierno formado por personas con ideas e intereses diferentes.",
+        "text": "Podría votar por candidatos de partidos distintos si me parecen los más capaces.",
     },
     {
         "id": "q06",
-        "text": "El gobierno debería intervenir menos en la economía mediante subsidios, incentivos y controles de precios. Esto daría más libertad a las personas y las empresas para crear oportunidades, aunque implique reducir apoyos como los subsidios educativos para niños de escasos recursos o los incentivos destinados al crecimiento de industrias como el turismo.",
+        "text": "El gobierno debería intervenir menos en la economía, aunque eso signifique menos subsidios y menos incentivos.",
     },
     {
         "id": "q07",
-        "text": "Al escoger a una persona para un puesto público, la preparación debería pesar más que la confianza personal o política. Eso puede significar trabajar con alguien que no apoyó al gobierno, o incluso con una persona vinculada a la oposición.",
+        "text": "En los puestos públicos, la preparación debe pesar más que la confianza política, aunque el elegido venga de la oposición.",
     },
     {
         "id": "q08",
-        "text": "Las leyes y la educación deberían reflejar parte de los valores culturales y religiosos de Panamá. La tradición católica y las costumbres más arraigadas merecen un lugar especial, aunque no todos los ciudadanos las compartan.",
+        "text": "Las leyes y la educación deberían reflejar los valores religiosos y las costumbres de Panamá, aunque no todos los compartan.",
     },
     {
         "id": "q09",
-        "text": "La mejor forma de reducir la delincuencia es invertir en educación, empleo y actividades deportivas de calidad para los jóvenes. Sus resultados pueden tardar más que los de las medidas de mano dura, pero buscan reducir las causas sociales del delito.",
+        "text": "La delincuencia se reduce más con educación, empleo y deporte para los jóvenes que con mano dura, aunque los resultados tarden más.",
     },
     {
         "id": "q10",
-        "text": "Si un político ayuda de verdad a su comunidad mediante obras y atención a las necesidades de los más pobres, es razonable volver a apoyarlo. Esto vale aunque busque la reelección, aspire a otro cargo o lleve muchos años en la política.",
+        "text": "Si un político cumple con obras a su comunidad, es razonable reelegirlo, aunque lleve muchos años en la política.",
     },
     {
         "id": "q11",
-        "text": "Ningún partido debería recibir mi voto por costumbre. Cada elección debe ganárselo nuevamente, aunque ese partido me haya representado bien en el pasado.",
+        "text": "Ningún partido debería tener mi voto asegurado: debe ganárselo en cada elección, aunque me haya representado bien antes.",
     },
     {
         "id": "q12",
-        "text": "A veces el gobierno debe imponer más reglas para proteger a la población. Puede hacerlo frente a industrias potencialmente contaminantes, como la minería o el petróleo, o para proteger a los jóvenes en internet, aunque eso limite algunas decisiones de empresas y familias.",
+        "text": "El gobierno debe poder ponerles reglas estrictas a industrias como la minería, aunque eso limite decisiones de las empresas.",
     },
     {
         "id": "q13",
-        "text": "Aunque existen distintos modelos de familia, el Estado debería dar un reconocimiento especial a la familia tradicional. Sus defensores consideran que aporta estabilidad en la crianza y continuidad de valores, aunque las demás familias también merezcan protección legal.",
+        "text": "El Estado debería darle un reconocimiento especial a la familia tradicional, aunque los demás modelos de familia también tengan protección legal.",
     },
     {
         "id": "q14",
-        "text": "Para enfrentar la delincuencia, la policía necesita más autoridad para actuar con firmeza. Debería poder detener o requisar ante situaciones sospechosas, aunque eso aumente el riesgo de que algunas personas inocentes sean revisadas o detenidas.",
+        "text": "La policía necesita más autoridad para detener y requisar ante sospechas, aunque aumente el riesgo de revisar a personas inocentes.",
     },
     {
         "id": "q15",
-        "text": "Panamá debería adoptar nuevas tecnologías e innovaciones con rapidez. Esto puede transformar formas tradicionales de trabajar o dejar a algunas personas sin empleo, pero puede considerarse un costo necesario para avanzar.",
+        "text": "Panamá debería adoptar las nuevas tecnologías con rapidez, aunque algunos empleos tradicionales desaparezcan.",
     },
     {
         "id": "q16",
-        "text": "Es comprensible que una persona que trabajó activamente para llevar un proyecto político al gobierno espere una oportunidad laboral, siempre que cumpla con los requisitos. En Panamá, el empleo escasea y muchas personas ven la política como una posible vía para conseguir trabajo.",
+        "text": "Es entendible que quien trabajó en una campaña espere un puesto en el gobierno que ayudó a elegir.",
     },
     {
         "id": "q17",
-        "text": "Si un partido representa bien mis ideas, considero importante mantenerle la lealtad y fortalecerlo con mi apoyo. Esto puede aplicarse aunque no me convenzan todos sus candidatos o decisiones, e incluso cuando algunos de sus integrantes enfrenten acusaciones graves de corrupción.",
+        "text": "Si un partido representa mis ideas, vale mantenerle la lealtad aunque no me convenzan todos sus candidatos.",
     },
     {
         "id": "q18",
-        "text": "El Estado no debería intervenir en las decisiones personales sobre cómo vivir, formar pareja o construir una familia, mientras no se haga daño a otras personas. Esto debe respetarse aunque esas decisiones no coincidan con las costumbres de la mayoría.",
+        "text": "El Estado no debería meterse en cómo los adultos viven, forman pareja o crean familia, mientras no dañen a nadie.",
     },
     {
         "id": "q19",
-        "text": "Prefiero pagar menos impuestos, aunque eso implique calles con menor mantenimiento, menos inversión en escuelas o servicios públicos más limitados. Reducir el gasto también puede evitar que la burocracia crezca demasiado.",
+        "text": "Prefiero pagar menos impuestos, aunque haya menos mantenimiento de calles, menos inversión en escuelas y servicios más limitados.",
     },
     {
         "id": "q20",
-        "text": "El progreso del país no debería dejar atrás nuestras tradiciones culturales y religiosas. La educación y la vida pública deben reservar espacio para la historia nacional, el patriotismo, la tradición católica y la cultura latinoamericana, aunque algunas personas prefieran una enseñanza más neutral.",
+        "text": "El progreso del país no debe dejar atrás nuestras tradiciones culturales y religiosas, aunque algunos prefieran una vida pública más neutral.",
     },
     {
         "id": "q21",
-        "text": "Dar demasiado poder a las fuerzas de seguridad puede afectar los derechos de personas inocentes. Sin embargo, limitar su autoridad también puede dificultar una respuesta rápida frente al crimen.",
+        "text": "Darle demasiado poder a las fuerzas de seguridad termina afectando a personas inocentes.",
     },
     {
         "id": "q22",
-        "text": "Estoy dispuesto a pagar más impuestos si eso mejora de manera clara la educación, la salud y otros servicios públicos. Aceptaría tener menos dinero disponible para mis propios gastos.",
+        "text": "Aceptaría pagar más impuestos si eso mejora la educación, la salud y los servicios públicos.",
     },
     {
         "id": "q23",
-        "text": "En temas que influyen en la formación de los menores, el Estado debería fijar límites basados en valores morales. Esto incluye la educación sexual y los contenidos que pueden ver en internet, aunque algunas familias prefieran tomar esas decisiones por su cuenta.",
+        "text": "El Estado debe fijar límites morales en temas que afectan a los menores, como la educación sexual, aunque algunas familias prefieran decidir solas.",
     },
     {
         "id": "q24",
-        "text": "Los partidos políticos fuertes ayudan a dar continuidad a los planes del país. Pueden evitar que cada nuevo gobierno engavete lo anterior y permitir que los proyectos políticos se consoliden, aunque también dificulten la entrada de nuevas fuerzas.",
+        "text": "Los partidos fuertes ayudan a que los planes de país no se engaveten con cada gobierno nuevo, aunque dificulten la entrada de nuevas fuerzas.",
     },
 ]
 

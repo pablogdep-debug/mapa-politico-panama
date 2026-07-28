@@ -8,6 +8,9 @@ los gráficos y las interpretaciones pertenecen a etapas posteriores.
 # Estas son las 24 respuestas que debe recibir el cálculo.
 QUESTION_IDS = tuple(f"q{number:02d}" for number in range(1, 25))
 
+# q16 conserva su eje y peso, pero su nueva redacción apunta al polo contrario.
+REVERSE_SCORED_IDS = frozenset({"q16"})
+
 
 # Las claves coinciden con las usadas en la guía: x, y y cuatro distintivos.
 # En cada eje se guardan primero las preguntas positivas y luego las contrarias.
@@ -69,9 +72,20 @@ def validate_answers(answers):
             raise ValueError(f"{question_id} debe tener un valor entero del 1 al 5.")
 
 
+def scoring_value(answers, question_id):
+    """Devuelve el valor efectivo, invirtiendo solo preguntas redactadas al revés."""
+    value = answers[question_id]
+    if question_id in REVERSE_SCORED_IDS:
+        return 6 - value
+    return value
+
+
 def average(answers, question_ids):
     """Devuelve el promedio de las preguntas indicadas."""
-    return sum(answers[question_id] for question_id in question_ids) / len(question_ids)
+    return sum(
+        scoring_value(answers, question_id)
+        for question_id in question_ids
+    ) / len(question_ids)
 
 
 def calculate_axis(answers, positive_ids, opposite_ids):
