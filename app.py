@@ -1312,15 +1312,17 @@ def render_cover():
                         </span>
                         <h2>¿Qué es la Brújula Política Panameña?</h2>
                         <p>
-                            La Brújula Política Panameña es un modelo de
-                            orientación política que identifica el perfil con el
+                            La <strong>Brújula Política Panameña</strong> es un
+                            modelo de orientación política que identifica el
+                            <strong>perfil</strong> con el
                             que más se alinean tus ideas sobre el Estado, la
                             sociedad y la organización del país.
                         </p>
                         <p>
-                            Responderás únicamente 24 preguntas y al finalizar
-                            recibirás un resultado inmediato acompañado de una
-                            breve interpretación.
+                            Responderás únicamente <strong>24 preguntas</strong>
+                            y al finalizar recibirás un
+                            <strong>resultado inmediato</strong> acompañado de
+                            una breve interpretación.
                         </p>
                     </div>
                     <div class="intro-card">
@@ -1332,15 +1334,17 @@ def render_cover():
                         </span>
                         <h2>¿Es privado?</h2>
                         <p>
-                            Tus respuestas son anónimas. No solicitamos tu
-                            nombre, cédula ni dirección. Tu rango de edad y
-                            distrito se utilizarán únicamente para análisis
-                            estadísticos agrupados.
+                            <strong>Sí.</strong> Tus
+                            <strong>respuestas son anónimas</strong>. No
+                            solicitamos tu nombre, cédula ni dirección. Tu rango
+                            de edad y distrito se utilizarán únicamente para
+                            <strong>análisis estadísticos agrupados</strong>.
                         </p>
                         <p>
                             En caso decidas dejar un correo para recibir
                             noticias del movimiento, el correo que dejes
-                            voluntariamente no se vincula con tu resultado.
+                            voluntariamente
+                            <strong>no se vincula con tu resultado</strong>.
                         </p>
                     </div>
                     <div class="intro-card">
@@ -1354,13 +1358,15 @@ def render_cover():
                         </span>
                         <h2>¿Quiénes somos?</h2>
                         <p>
-                            Este proyecto fue creado por Pablo García de Paredes
-                            y Mark Harrick con el propósito de contribuir a una
-                            conversación pública más reflexiva, respetuosa e
-                            informada entre los panameños.
+                            Este proyecto fue creado por
+                            <strong>Pablo García de Paredes y Mark
+                            Harrick</strong> con el propósito de contribuir a una
+                            <strong>conversación pública más reflexiva,
+                            respetuosa e informada</strong> entre los panameños.
                         </p>
                         <p>
-                            Creemos que una mejor democracia comienza cuando
+                            Creemos que una
+                            <strong>mejor democracia comienza</strong> cuando
                             entendemos primero nuestras propias ideas.
                         </p>
                     </div>
