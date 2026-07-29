@@ -168,10 +168,15 @@ def _worksheet(kind):
 
 def _read_headers_and_first_column(worksheet):
     """Lee una vez el contrato y los identificadores ya registrados."""
-    headers = tuple(worksheet.row_values(1))
+    headers = tuple(
+        _api_call("read_headers", lambda: worksheet.row_values(1))
+    )
     first_column = tuple(
         str(value)
-        for value in worksheet.col_values(1)
+        for value in _api_call(
+            "read_first_column",
+            lambda: worksheet.col_values(1),
+        )
         if value not in (None, "")
     )
     return headers, first_column
@@ -184,11 +189,24 @@ def _response_uuid_set(worksheet, *, refresh=False):
 
     headers, first_column = _read_headers_and_first_column(worksheet)
     if not headers:
-        worksheet.append_row(list(RESPONSE_HEADERS), value_input_option="RAW")
+        _api_call(
+            "append_response_headers",
+            lambda: worksheet.append_row(
+                list(RESPONSE_HEADERS),
+                value_input_option="RAW",
+            ),
+        )
     elif headers == RESPONSE_HEADERS:
         pass
     elif headers == RESPONSE_HEADERS[:-1]:
-        worksheet.update_cell(1, len(RESPONSE_HEADERS), "instrument_version")
+        _api_call(
+            "extend_response_headers",
+            lambda: worksheet.update_cell(
+                1,
+                len(RESPONSE_HEADERS),
+                "instrument_version",
+            ),
+        )
     else:
         raise HeaderMismatchError("Los encabezados no coinciden.")
 
@@ -208,7 +226,13 @@ def _subscriber_email_set(worksheet, *, refresh=False):
 
     headers, first_column = _read_headers_and_first_column(worksheet)
     if not headers:
-        worksheet.append_row(list(SUBSCRIBER_HEADERS), value_input_option="RAW")
+        _api_call(
+            "append_subscriber_headers",
+            lambda: worksheet.append_row(
+                list(SUBSCRIBER_HEADERS),
+                value_input_option="RAW",
+            ),
+        )
     elif headers != SUBSCRIBER_HEADERS:
         raise HeaderMismatchError("Los encabezados no coinciden.")
 
@@ -241,6 +265,19 @@ def _safe_error_label(error):
         status = str(error.error.get("status", "UNKNOWN"))
         return f"APIError code={error.code} status={status}"
     return type(error).__name__
+
+
+def _api_call(stage, operation):
+    """Etiqueta la operación fallida sin registrar contenido ni IDs privados."""
+    try:
+        return operation()
+    except Exception as error:
+        LOGGER.error(
+            "Google Sheets operation=%s failed (%s).",
+            stage,
+            _safe_error_label(error),
+        )
+        raise
 
 
 def _run_with_retry(operation, kind):
@@ -341,7 +378,13 @@ def save_anonymous_response(record: dict) -> SaveResult:
                     )
                 row = [sanitize_cell(record[header]) for header in RESPONSE_HEADERS]
                 try:
-                    worksheet.append_row(row, value_input_option="RAW")
+                    _api_call(
+                        "append_response_row",
+                        lambda: worksheet.append_row(
+                            row,
+                            value_input_option="RAW",
+                        ),
+                    )
                 except Exception as error:
                     if _is_temporary_error(error):
                         refreshed_uuids = _response_uuid_set(
@@ -415,7 +458,13 @@ def save_subscriber_email(email: str) -> SaveResult:
                 }
                 row = [sanitize_cell(record[header]) for header in SUBSCRIBER_HEADERS]
                 try:
-                    worksheet.append_row(row, value_input_option="RAW")
+                    _api_call(
+                        "append_subscriber_row",
+                        lambda: worksheet.append_row(
+                            row,
+                            value_input_option="RAW",
+                        ),
+                    )
                 except Exception as error:
                     if _is_temporary_error(error):
                         refreshed_emails = _subscriber_email_set(
