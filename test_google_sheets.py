@@ -46,6 +46,7 @@ class FakeWorksheet:
         self.appended = []
         self.updated_cells = []
         self.fail_after_append_once = fail_after_append_once
+        self.batch_get_calls = 0
 
     def row_values(self, row):
         assert row == 1
@@ -56,6 +57,13 @@ class FakeWorksheet:
         if self.first_column:
             return list(self.first_column)
         return [self.headers[0]] if self.headers else []
+
+    def batch_get(self, ranges):
+        assert tuple(ranges) == ("1:1", "A:A")
+        self.batch_get_calls += 1
+        header_range = [list(self.headers)] if self.headers else []
+        first_column_range = [[value] for value in self.first_column]
+        return [header_range, first_column_range]
 
     def append_row(self, row, value_input_option):
         assert value_input_option == "RAW"
@@ -235,6 +243,7 @@ def test_repeated_save_with_same_uuid_produces_exactly_one_row():
     assert first.status == "saved"
     assert second.status == "already_exists"
     assert len(worksheet.appended) == 1
+    assert worksheet.batch_get_calls == 1
 
 
 def test_concurrent_calls_with_same_uuid_produce_exactly_one_row():
@@ -266,6 +275,21 @@ def test_retry_after_ambiguous_timeout_detects_existing_uuid():
         result = save_anonymous_response(response_record())
     assert result.status == "already_exists"
     assert len(worksheet.appended) == 1
+    assert worksheet.batch_get_calls == 2
+
+
+def test_successive_responses_use_one_initial_read_then_only_append():
+    worksheet = FakeWorksheet(RESPONSE_HEADERS)
+    first_record = response_record()
+    second_record = response_record()
+    configured, selected = configured_patches(worksheet)
+    with configured, selected:
+        first = save_anonymous_response(first_record)
+        second = save_anonymous_response(second_record)
+    assert first.status == "saved"
+    assert second.status == "saved"
+    assert len(worksheet.appended) == 2
+    assert worksheet.batch_get_calls == 1
 
 
 def test_email_is_normalized_and_saved_without_other_data():
@@ -288,6 +312,31 @@ def test_duplicate_normalized_email_does_not_append():
         result = save_subscriber_email(" Persona@Ejemplo.com ")
     assert result.success and result.already_exists
     assert worksheet.appended == []
+
+
+def test_successive_emails_use_one_initial_read_then_only_append():
+    worksheet = FakeWorksheet(SUBSCRIBER_HEADERS)
+    configured, selected = configured_patches(worksheet)
+    with configured, selected:
+        first = save_subscriber_email("primera@ejemplo.com")
+        second = save_subscriber_email("segunda@ejemplo.com")
+    assert first.status == "saved"
+    assert second.status == "saved"
+    assert len(worksheet.appended) == 2
+    assert worksheet.batch_get_calls == 1
+
+
+def test_subscriber_retry_after_ambiguous_timeout_avoids_duplicate():
+    worksheet = FakeWorksheet(
+        SUBSCRIBER_HEADERS,
+        fail_after_append_once=True,
+    )
+    configured, selected = configured_patches(worksheet)
+    with configured, selected, patch("storage.google_sheets.time.sleep"):
+        result = save_subscriber_email("persona@ejemplo.com")
+    assert result.status == "already_exists"
+    assert len(worksheet.appended) == 1
+    assert worksheet.batch_get_calls == 2
 
 
 def test_missing_configuration_fails_safely():
@@ -332,7 +381,7 @@ def test_temporary_connection_error_is_retried_then_succeeds():
         result = save_anonymous_response(response_record())
     assert result.success
     assert selected.call_count == 2
-    pause.assert_called_once_with(0.5)
+    pause.assert_called_once_with(1.0)
 
 
 @pytest.mark.parametrize("code", [408, 429, 500, 502, 503, 504])

@@ -13,6 +13,7 @@ import re
 import threading
 import time
 import uuid
+import weakref
 
 import gspread
 from google.oauth2.service_account import Credentials
@@ -60,7 +61,11 @@ _CONFIG_KEYS = (
 )
 _EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 _RESPONSE_APPEND_LOCK = threading.Lock()
+_SUBSCRIBER_APPEND_LOCK = threading.Lock()
 _RETRIABLE_API_CODES = frozenset({408, 429, 500, 502, 503, 504})
+_RETRY_DELAYS = (1.0, 2.0, 4.0, 8.0)
+_RESPONSE_UUID_CACHE = weakref.WeakKeyDictionary()
+_SUBSCRIBER_EMAIL_CACHE = weakref.WeakKeyDictionary()
 
 
 @dataclass(frozen=True)
@@ -161,38 +166,65 @@ def _worksheet(kind):
     return _google_client().open_by_key(spreadsheet_id).worksheet(worksheet_name)
 
 
-def _ensure_headers(worksheet, expected_headers):
-    current_headers = tuple(worksheet.row_values(1))
-    if not current_headers:
-        worksheet.append_row(list(expected_headers), value_input_option="RAW")
-        return
-    if current_headers != tuple(expected_headers):
+def _read_headers_and_first_column(worksheet):
+    """Obtiene cabeceras y primera columna mediante una sola petición."""
+    header_range, first_column_range = worksheet.batch_get(("1:1", "A:A"))
+    headers = tuple(header_range[0]) if header_range else ()
+    first_column = tuple(
+        str(row[0])
+        for row in first_column_range
+        if row and row[0] not in (None, "")
+    )
+    return headers, first_column
+
+
+def _response_uuid_set(worksheet, *, refresh=False):
+    """Carga una vez los UUID; las escrituras normales no releen la hoja."""
+    if not refresh and worksheet in _RESPONSE_UUID_CACHE:
+        return _RESPONSE_UUID_CACHE[worksheet]
+
+    headers, first_column = _read_headers_and_first_column(worksheet)
+    if not headers:
+        worksheet.append_row(list(RESPONSE_HEADERS), value_input_option="RAW")
+    elif headers == RESPONSE_HEADERS:
+        pass
+    elif headers == RESPONSE_HEADERS[:-1]:
+        worksheet.update_cell(1, len(RESPONSE_HEADERS), "instrument_version")
+    else:
         raise HeaderMismatchError("Los encabezados no coinciden.")
 
+    known_uuids = {
+        value
+        for value in first_column
+        if value and value != "response_uuid"
+    }
+    _RESPONSE_UUID_CACHE[worksheet] = known_uuids
+    return known_uuids
 
-def _ensure_response_headers(worksheet):
-    """Añade solo la nueva cabecera; no etiqueta respuestas históricas."""
-    current_headers = tuple(worksheet.row_values(1))
-    if not current_headers:
-        worksheet.append_row(list(RESPONSE_HEADERS), value_input_option="RAW")
-        return
-    if current_headers == RESPONSE_HEADERS:
-        return
-    legacy_headers = RESPONSE_HEADERS[:-1]
-    if current_headers == legacy_headers:
-        worksheet.update_cell(1, len(RESPONSE_HEADERS), "instrument_version")
-        return
-    raise HeaderMismatchError("Los encabezados no coinciden.")
+
+def _subscriber_email_set(worksheet, *, refresh=False):
+    """Carga una vez los correos, separados de las respuestas políticas."""
+    if not refresh and worksheet in _SUBSCRIBER_EMAIL_CACHE:
+        return _SUBSCRIBER_EMAIL_CACHE[worksheet]
+
+    headers, first_column = _read_headers_and_first_column(worksheet)
+    if not headers:
+        worksheet.append_row(list(SUBSCRIBER_HEADERS), value_input_option="RAW")
+    elif headers != SUBSCRIBER_HEADERS:
+        raise HeaderMismatchError("Los encabezados no coinciden.")
+
+    known_emails = {
+        normalize_email(value)
+        for value in first_column
+        if value and value != "email"
+    }
+    _SUBSCRIBER_EMAIL_CACHE[worksheet] = known_emails
+    return known_emails
 
 
 def response_uuid_exists(worksheet, response_uuid):
     """Busca el identificador únicamente en su columna contractual."""
-    headers = tuple(worksheet.row_values(1))
-    try:
-        uuid_column = headers.index("response_uuid") + 1
-    except ValueError as error:
-        raise HeaderMismatchError("Falta la columna response_uuid.") from error
-    existing_values = worksheet.col_values(uuid_column)
+    existing_values = worksheet.col_values(1)
     return str(response_uuid) in {
         str(value) for value in existing_values[1:] if value
     }
@@ -213,12 +245,11 @@ def _safe_error_label(error):
 
 
 def _run_with_retry(operation, kind):
-    delays = (0.5, 1.5)
-    for attempt in range(3):
+    for attempt in range(len(_RETRY_DELAYS) + 1):
         try:
             return operation()
         except Exception as error:
-            if not _is_temporary_error(error) or attempt == 2:
+            if not _is_temporary_error(error) or attempt == len(_RETRY_DELAYS):
                 raise
             LOGGER.warning(
                 "Fallo temporal en %s/%s (%s).",
@@ -226,7 +257,7 @@ def _run_with_retry(operation, kind):
                 operation.__name__,
                 _safe_error_label(error),
             )
-            time.sleep(delays[attempt])
+            time.sleep(_RETRY_DELAYS[attempt])
 
 
 def _validate_response(record):
@@ -301,16 +332,31 @@ def save_anonymous_response(record: dict) -> SaveResult:
         def append_response():
             with _RESPONSE_APPEND_LOCK:
                 worksheet = _worksheet("responses")
-                _ensure_response_headers(worksheet)
                 response_uuid = str(record["response_uuid"])
-                if response_uuid_exists(worksheet, response_uuid):
+                known_uuids = _response_uuid_set(worksheet)
+                if response_uuid in known_uuids:
                     return SaveResult(
                         success=True,
                         already_exists=True,
                         message="Tu participación ya había sido registrada.",
                     )
                 row = [sanitize_cell(record[header]) for header in RESPONSE_HEADERS]
-                worksheet.append_row(row, value_input_option="RAW")
+                try:
+                    worksheet.append_row(row, value_input_option="RAW")
+                except Exception as error:
+                    if _is_temporary_error(error):
+                        refreshed_uuids = _response_uuid_set(
+                            worksheet,
+                            refresh=True,
+                        )
+                        if response_uuid in refreshed_uuids:
+                            return SaveResult(
+                                success=True,
+                                already_exists=True,
+                                message="Tu participación ya había sido registrada.",
+                            )
+                    raise
+                known_uuids.add(response_uuid)
                 return SaveResult(
                     success=True,
                     message="Tu participación fue registrada correctamente.",
@@ -353,27 +399,44 @@ def save_subscriber_email(email: str) -> SaveResult:
             raise StorageConfigurationError("Google Sheets no está configurado.")
 
         def append_subscriber():
-            worksheet = _worksheet("subscribers")
-            _ensure_headers(worksheet, SUBSCRIBER_HEADERS)
-            existing = {normalize_email(value) for value in worksheet.col_values(1)[1:]}
-            if normalized in existing:
+            with _SUBSCRIBER_APPEND_LOCK:
+                worksheet = _worksheet("subscribers")
+                known_emails = _subscriber_email_set(worksheet)
+                if normalized in known_emails:
+                    return SaveResult(
+                        success=True,
+                        already_exists=True,
+                        message="Este correo ya estaba registrado para recibir noticias.",
+                    )
+                record = {
+                    "email": normalized,
+                    "consent_date": datetime.now(timezone.utc).isoformat(),
+                    "source": "brujula_streamlit",
+                    "status": "active",
+                }
+                row = [sanitize_cell(record[header]) for header in SUBSCRIBER_HEADERS]
+                try:
+                    worksheet.append_row(row, value_input_option="RAW")
+                except Exception as error:
+                    if _is_temporary_error(error):
+                        refreshed_emails = _subscriber_email_set(
+                            worksheet,
+                            refresh=True,
+                        )
+                        if normalized in refreshed_emails:
+                            return SaveResult(
+                                success=True,
+                                already_exists=True,
+                                message=(
+                                    "Este correo ya estaba registrado para recibir noticias."
+                                ),
+                            )
+                    raise
+                known_emails.add(normalized)
                 return SaveResult(
                     success=True,
-                    already_exists=True,
-                    message="Este correo ya estaba registrado para recibir noticias.",
+                    message="Tu correo fue registrado correctamente.",
                 )
-            record = {
-                "email": normalized,
-                "consent_date": datetime.now(timezone.utc).isoformat(),
-                "source": "brujula_streamlit",
-                "status": "active",
-            }
-            row = [sanitize_cell(record[header]) for header in SUBSCRIBER_HEADERS]
-            worksheet.append_row(row, value_input_option="RAW")
-            return SaveResult(
-                success=True,
-                message="Tu correo fue registrado correctamente.",
-            )
 
         return _run_with_retry(append_subscriber, "subscribers")
     except (StorageConfigurationError, HeaderMismatchError):
