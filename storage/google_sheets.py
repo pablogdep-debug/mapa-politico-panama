@@ -199,6 +199,12 @@ def _response_uuid_set(worksheet, *, refresh=False):
     elif headers == RESPONSE_HEADERS:
         pass
     elif headers == RESPONSE_HEADERS[:-1]:
+        missing_columns = len(RESPONSE_HEADERS) - worksheet.col_count
+        if missing_columns > 0:
+            _api_call(
+                "expand_response_columns",
+                lambda: worksheet.add_cols(missing_columns),
+            )
         _api_call(
             "extend_response_headers",
             lambda: worksheet.update_cell(

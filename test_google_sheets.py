@@ -48,6 +48,8 @@ class FakeWorksheet:
         self.fail_after_append_once = fail_after_append_once
         self.row_values_calls = 0
         self.col_values_calls = 0
+        self.col_count = len(self.headers)
+        self.added_columns = 0
 
     def row_values(self, row):
         assert row == 1
@@ -71,6 +73,10 @@ class FakeWorksheet:
         if self.fail_after_append_once:
             self.fail_after_append_once = False
             raise TimeoutError("confirmación ambigua")
+
+    def add_cols(self, columns):
+        self.added_columns += columns
+        self.col_count += columns
 
     def update_cell(self, row, column, value):
         self.updated_cells.append((row, column, value))
@@ -179,8 +185,21 @@ def test_legacy_response_sheet_only_receives_new_header_at_the_end():
     assert worksheet.updated_cells == [
         (1, len(RESPONSE_HEADERS), "instrument_version")
     ]
+    assert worksheet.added_columns == 1
+    assert worksheet.col_count == len(RESPONSE_HEADERS)
     assert worksheet.headers == list(RESPONSE_HEADERS)
     assert worksheet.appended == [[record[header] for header in RESPONSE_HEADERS]]
+
+
+def test_legacy_sheet_with_spare_columns_is_not_expanded_again():
+    worksheet = FakeWorksheet(RESPONSE_HEADERS[:-1])
+    worksheet.col_count = len(RESPONSE_HEADERS) + 5
+    configured, selected = configured_patches(worksheet)
+    with configured, selected:
+        result = save_anonymous_response(response_record())
+    assert result.success
+    assert worksheet.added_columns == 0
+    assert worksheet.headers == list(RESPONSE_HEADERS)
 
 
 @pytest.mark.parametrize(
