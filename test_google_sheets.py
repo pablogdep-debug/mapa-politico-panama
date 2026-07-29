@@ -46,24 +46,20 @@ class FakeWorksheet:
         self.appended = []
         self.updated_cells = []
         self.fail_after_append_once = fail_after_append_once
-        self.batch_get_calls = 0
+        self.row_values_calls = 0
+        self.col_values_calls = 0
 
     def row_values(self, row):
         assert row == 1
+        self.row_values_calls += 1
         return list(self.headers)
 
     def col_values(self, column):
         assert column == 1
+        self.col_values_calls += 1
         if self.first_column:
             return list(self.first_column)
         return [self.headers[0]] if self.headers else []
-
-    def batch_get(self, ranges):
-        assert tuple(ranges) == ("1:1", "A:A")
-        self.batch_get_calls += 1
-        header_range = [list(self.headers)] if self.headers else []
-        first_column_range = [[value] for value in self.first_column]
-        return [header_range, first_column_range]
 
     def append_row(self, row, value_input_option):
         assert value_input_option == "RAW"
@@ -243,7 +239,8 @@ def test_repeated_save_with_same_uuid_produces_exactly_one_row():
     assert first.status == "saved"
     assert second.status == "already_exists"
     assert len(worksheet.appended) == 1
-    assert worksheet.batch_get_calls == 1
+    assert worksheet.row_values_calls == 1
+    assert worksheet.col_values_calls == 1
 
 
 def test_concurrent_calls_with_same_uuid_produce_exactly_one_row():
@@ -275,7 +272,8 @@ def test_retry_after_ambiguous_timeout_detects_existing_uuid():
         result = save_anonymous_response(response_record())
     assert result.status == "already_exists"
     assert len(worksheet.appended) == 1
-    assert worksheet.batch_get_calls == 2
+    assert worksheet.row_values_calls == 2
+    assert worksheet.col_values_calls == 2
 
 
 def test_successive_responses_use_one_initial_read_then_only_append():
@@ -289,7 +287,8 @@ def test_successive_responses_use_one_initial_read_then_only_append():
     assert first.status == "saved"
     assert second.status == "saved"
     assert len(worksheet.appended) == 2
-    assert worksheet.batch_get_calls == 1
+    assert worksheet.row_values_calls == 1
+    assert worksheet.col_values_calls == 1
 
 
 def test_email_is_normalized_and_saved_without_other_data():
@@ -323,7 +322,8 @@ def test_successive_emails_use_one_initial_read_then_only_append():
     assert first.status == "saved"
     assert second.status == "saved"
     assert len(worksheet.appended) == 2
-    assert worksheet.batch_get_calls == 1
+    assert worksheet.row_values_calls == 1
+    assert worksheet.col_values_calls == 1
 
 
 def test_subscriber_retry_after_ambiguous_timeout_avoids_duplicate():
@@ -336,7 +336,8 @@ def test_subscriber_retry_after_ambiguous_timeout_avoids_duplicate():
         result = save_subscriber_email("persona@ejemplo.com")
     assert result.status == "already_exists"
     assert len(worksheet.appended) == 1
-    assert worksheet.batch_get_calls == 2
+    assert worksheet.row_values_calls == 2
+    assert worksheet.col_values_calls == 2
 
 
 def test_missing_configuration_fails_safely():

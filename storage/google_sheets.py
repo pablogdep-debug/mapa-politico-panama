@@ -167,13 +167,12 @@ def _worksheet(kind):
 
 
 def _read_headers_and_first_column(worksheet):
-    """Obtiene cabeceras y primera columna mediante una sola petición."""
-    header_range, first_column_range = worksheet.batch_get(("1:1", "A:A"))
-    headers = tuple(header_range[0]) if header_range else ()
+    """Lee una vez el contrato y los identificadores ya registrados."""
+    headers = tuple(worksheet.row_values(1))
     first_column = tuple(
-        str(row[0])
-        for row in first_column_range
-        if row and row[0] not in (None, "")
+        str(value)
+        for value in worksheet.col_values(1)
+        if value not in (None, "")
     )
     return headers, first_column
 
