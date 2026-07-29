@@ -8,7 +8,6 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -25,7 +24,6 @@ from demographics import (
 from interpretations import classify_position, describe
 import instrument_version
 from nuances import build_nuance_bar
-from plotting import create_map, create_social_map
 from questions import QUESTIONS
 from response_quality import (
     INVALID_COMPLETION_MESSAGE,
@@ -1387,7 +1385,7 @@ def render_cover():
         if st.button(
             "Comenzar",
             type="primary",
-            use_container_width=True,
+            width="stretch",
             key="start_button",
         ):
             st.session_state.started = True
@@ -1452,7 +1450,7 @@ def render_question():
                 visible_label,
                 key=f"answer_value_{value}_{question_id}",
                 type="primary" if is_selected else "secondary",
-                use_container_width=True,
+                width="stretch",
             ):
                 st.session_state.answers[question_id] = value
                 st.rerun()
@@ -1463,7 +1461,7 @@ def render_question():
             with back_column:
                 if index > 0 and st.button(
                     "← Atrás",
-                    use_container_width=True,
+                    width="stretch",
                     key=f"back_{index}",
                 ):
                     st.session_state.current_question -= 1
@@ -1477,7 +1475,7 @@ def render_question():
                     next_label,
                     type="primary",
                     disabled=selected_value is None,
-                    use_container_width=True,
+                    width="stretch",
                     key=f"next_{index}",
                 ):
                     if final_question:
@@ -1544,7 +1542,7 @@ def render_age_range():
                 visible_label,
                 key=f"{AGE_FIELD_ID}_{index}",
                 type="primary" if is_selected else "secondary",
-                use_container_width=True,
+                width="stretch",
             ):
                 st.session_state.age_range = age_range
                 st.rerun()
@@ -1557,7 +1555,7 @@ def render_age_range():
             with back_column:
                 if st.button(
                     "← Atrás",
-                    use_container_width=True,
+                    width="stretch",
                     key="back_demographic_age",
                 ):
                     st.session_state.demographic_step = 0
@@ -1568,7 +1566,7 @@ def render_age_range():
                     "Siguiente →",
                     type="primary",
                     disabled=not is_valid_age_range(selected_age),
-                    use_container_width=True,
+                    width="stretch",
                     key="next_demographic_age",
                 ):
                     st.session_state.demographic_step = 2
@@ -1648,7 +1646,7 @@ def render_district():
             with back_column:
                 if st.button(
                     "← Atrás",
-                    use_container_width=True,
+                    width="stretch",
                     key="back_demographic_district",
                 ):
                     st.session_state.demographic_step = 1
@@ -1658,7 +1656,7 @@ def render_district():
                     "Ver mis resultados",
                     type="primary",
                     disabled=not valid_selection,
-                    use_container_width=True,
+                    width="stretch",
                     key="finish_demographics",
                 ):
                     st.session_state.demographic_record = build_demographic_record(
@@ -1813,7 +1811,7 @@ def render_shared_cta(key):
         ),
         on_click=start_own_questionnaire,
         type="primary",
-        use_container_width=True,
+        width="stretch",
         key=f"shared_cta_{key}",
     )
 
@@ -2079,8 +2077,13 @@ def render_result_planes(scores, classification, social_classification):
                 unsafe_allow_html=True,
             )
 
+            # Los gráficos son pesados. Se importan solo cuando la persona
+            # llega al resultado, no mientras abre o responde el cuestionario.
+            import matplotlib.pyplot as plt
+            from plotting import create_map, create_social_map
+
             figure = create_map(x, y)
-            st.pyplot(figure, use_container_width=True)
+            st.pyplot(figure, width="stretch")
             plt.close(figure)
             st.markdown(
                 '<p class="result-technical">'
@@ -2114,7 +2117,7 @@ def render_result_planes(scores, classification, social_classification):
             )
 
             social_figure = create_social_map(social_x, social_y)
-            st.pyplot(social_figure, use_container_width=True)
+            st.pyplot(social_figure, width="stretch")
             plt.close(social_figure)
             st.markdown(
                 '<p class="result-technical">'
@@ -2260,7 +2263,10 @@ def render_response_save_status(scores):
     if status != SUBMISSION_ERROR:
         return
 
-    st.warning(st.session_state.submission_message)
+    st.warning(
+        "Tu resultado ya está disponible. "
+        f"{st.session_state.submission_message}"
+    )
     if st.button(
         "Intentar registrar nuevamente",
         key="retry_response_save",
@@ -2271,15 +2277,15 @@ def render_response_save_status(scores):
 
 
 def render_results():
-    """Calcula la sesión actual y delega su presentación sin alterar la fórmula."""
+    """Muestra el resultado antes de intentar su registro anónimo."""
     if not can_persist_response(st.session_state):
         render_invalid_completion()
         return
     numeric_answers = dict(st.session_state.answers)
     scores = calculate_scores(numeric_answers)
+    render_result_report(scores)
     save_current_response(scores)
     render_response_save_status(scores)
-    render_result_report(scores)
 
 
 def render_invalid_completion():

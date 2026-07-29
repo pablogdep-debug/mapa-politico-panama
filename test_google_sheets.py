@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 import uuid
 
+import gspread
 import pytest
 
 import instrument_version
@@ -12,11 +13,26 @@ from scoring import QUESTION_IDS, calculate_scores
 from storage.google_sheets import (
     RESPONSE_HEADERS,
     SUBSCRIBER_HEADERS,
+    _is_temporary_error,
+    _safe_error_label,
     response_uuid_exists,
     sanitize_cell,
     save_anonymous_response,
     save_subscriber_email,
 )
+
+
+class FakeApiResponse:
+    def __init__(self, code, status):
+        self.text = ""
+        self._error = {
+            "code": code,
+            "message": "detalle deliberadamente omitido",
+            "status": status,
+        }
+
+    def json(self):
+        return {"error": self._error}
 
 
 class FakeWorksheet:
@@ -317,3 +333,28 @@ def test_temporary_connection_error_is_retried_then_succeeds():
     assert result.success
     assert selected.call_count == 2
     pause.assert_called_once_with(0.5)
+
+
+@pytest.mark.parametrize("code", [408, 429, 500, 502, 503, 504])
+def test_only_temporary_google_api_codes_are_retried(code):
+    error = gspread.exceptions.APIError(
+        FakeApiResponse(code, "TEMPORARY"),
+    )
+    assert _is_temporary_error(error)
+
+
+@pytest.mark.parametrize("code", [400, 401, 403, 404])
+def test_permanent_google_api_codes_are_not_retried(code):
+    error = gspread.exceptions.APIError(
+        FakeApiResponse(code, "PERMANENT"),
+    )
+    assert not _is_temporary_error(error)
+
+
+def test_google_api_log_label_exposes_only_code_and_status():
+    error = gspread.exceptions.APIError(
+        FakeApiResponse(403, "PERMISSION_DENIED"),
+    )
+    label = _safe_error_label(error)
+    assert label == "APIError code=403 status=PERMISSION_DENIED"
+    assert "detalle deliberadamente omitido" not in label

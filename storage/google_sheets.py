@@ -60,6 +60,7 @@ _CONFIG_KEYS = (
 )
 _EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 _RESPONSE_APPEND_LOCK = threading.Lock()
+_RETRIABLE_API_CODES = frozenset({408, 429, 500, 502, 503, 504})
 
 
 @dataclass(frozen=True)
@@ -144,6 +145,7 @@ def _google_client():
     return gspread.authorize(credentials)
 
 
+@st.cache_resource(show_spinner=False)
 def _worksheet(kind):
     config = _secrets_section("brujula_sheets")
     if not config or not all(config.get(key) for key in _CONFIG_KEYS):
@@ -197,14 +199,17 @@ def response_uuid_exists(worksheet, response_uuid):
 
 
 def _is_temporary_error(error):
-    return isinstance(
-        error,
-        (
-            gspread.exceptions.APIError,
-            ConnectionError,
-            TimeoutError,
-        ),
-    )
+    if isinstance(error, gspread.exceptions.APIError):
+        return error.code in _RETRIABLE_API_CODES
+    return isinstance(error, (ConnectionError, TimeoutError))
+
+
+def _safe_error_label(error):
+    """Resume un error de Google sin registrar datos, IDs ni credenciales."""
+    if isinstance(error, gspread.exceptions.APIError):
+        status = str(error.error.get("status", "UNKNOWN"))
+        return f"APIError code={error.code} status={status}"
+    return type(error).__name__
 
 
 def _run_with_retry(operation, kind):
@@ -219,7 +224,7 @@ def _run_with_retry(operation, kind):
                 "Fallo temporal en %s/%s (%s).",
                 kind,
                 operation.__name__,
-                type(error).__name__,
+                _safe_error_label(error),
             )
             time.sleep(delays[attempt])
 
@@ -323,7 +328,7 @@ def save_anonymous_response(record: dict) -> SaveResult:
     except Exception as error:
         LOGGER.error(
             "No se pudo guardar responses (%s).",
-            type(error).__name__,
+            _safe_error_label(error),
         )
         return SaveResult(
             success=False,
@@ -379,7 +384,7 @@ def save_subscriber_email(email: str) -> SaveResult:
     except Exception as error:
         LOGGER.error(
             "No se pudo guardar subscribers (%s).",
-            type(error).__name__,
+            _safe_error_label(error),
         )
         return SaveResult(
             success=False,
