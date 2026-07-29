@@ -11,6 +11,13 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
+from components.draft_storage import (
+    PENDING_DRAFT,
+    clear_draft,
+    idle_draft_storage,
+    read_draft,
+    save_draft,
+)
 from config import PATREON_URL
 from demographics import (
     AGE_FIELD_ID,
@@ -23,12 +30,20 @@ from demographics import (
 )
 from interpretations import classify_position, describe
 import instrument_version
+from drafts import (
+    build_draft,
+    district_option_for_draft,
+    parse_and_validate_draft,
+    serialize_draft,
+)
 from nuances import build_nuance_bar
 from questions import QUESTIONS
 from response_quality import (
     INVALID_COMPLETION_MESSAGE,
+    active_elapsed_seconds,
     can_persist_response,
     reset_response_quality,
+    restore_questionnaire_timer,
     start_questionnaire_timer,
     validate_completion_time,
 )
@@ -279,6 +294,30 @@ st.markdown(
         font-size: 0.72rem;
         line-height: 1.4;
         text-align: center;
+    }
+
+    [class*="st-key-draft_recovery"] {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid rgba(62, 128, 235, 0.22);
+        border-radius: 16px;
+        background: rgba(239, 246, 255, 0.78);
+    }
+
+    .draft-recovery-message {
+        margin: 0 0 0.8rem;
+        color: var(--compass-text);
+        font-size: 0.92rem;
+        font-weight: 650;
+        line-height: 1.45;
+        text-align: center;
+    }
+
+    [class*="st-key-continue_draft"] button,
+    [class*="st-key-discard_draft"] button {
+        min-height: 50px;
+        border-radius: 13px;
+        font-weight: 700;
     }
 
     [class*="st-key-start_button"] button,
@@ -1190,13 +1229,128 @@ def initialize_state():
         "submission_message": "",
         "submitted_at_utc": None,
         "questionnaire_started_at": None,
+        "questionnaire_elapsed_active_seconds": 0.0,
         "completion_time_validated": False,
         "invalid_completion": False,
+        "draft_checked": False,
+        "draft_candidate": None,
+        "draft_storage_command": None,
+        "draft_storage_payload": None,
+        "draft_last_serialized": None,
+        "draft_cleared_for_outcome": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
     ensure_response_uuid(st.session_state)
+
+
+def queue_draft_clear():
+    """Solicita una limpieza local en el siguiente render sin tocar el servidor."""
+    st.session_state.draft_candidate = None
+    st.session_state.draft_last_serialized = None
+    st.session_state.draft_storage_command = "clear"
+    st.session_state.draft_storage_payload = None
+
+
+def flush_draft_storage_command():
+    """Monta una sola operación silenciosa de escritura o limpieza."""
+    command = st.session_state.draft_storage_command
+    if command == "save":
+        save_draft(st.session_state.draft_storage_payload)
+    elif command == "clear":
+        clear_draft()
+    else:
+        idle_draft_storage()
+        return
+    st.session_state.draft_storage_command = None
+    st.session_state.draft_storage_payload = None
+
+
+def mark_draft_activity():
+    """Registra solo interacciones reales y prepara un autoguardado local."""
+    if not st.session_state.started or st.session_state.show_results:
+        return
+    start_questionnaire_timer(st.session_state)
+    draft = build_draft(
+        st.session_state,
+        elapsed_active_seconds=active_elapsed_seconds(st.session_state),
+    )
+    serialized = serialize_draft(draft)
+    if serialized == st.session_state.draft_last_serialized:
+        return
+    st.session_state.draft_last_serialized = serialized
+    st.session_state.draft_storage_command = "save"
+    st.session_state.draft_storage_payload = serialized
+
+
+def check_for_browser_draft():
+    """Lee localStorage una vez y valida íntegramente su contenido en Python."""
+    if st.session_state.draft_checked:
+        return
+    serialized = read_draft()
+    if serialized == PENDING_DRAFT:
+        st.stop()
+    st.session_state.draft_checked = True
+    if serialized is None:
+        return
+    candidate = parse_and_validate_draft(serialized)
+    if candidate is None:
+        queue_draft_clear()
+        return
+    st.session_state.draft_candidate = candidate
+    st.session_state.draft_last_serialized = serialize_draft(candidate)
+
+
+def restore_browser_draft():
+    """Restaura un borrador válido solo después del consentimiento del usuario."""
+    draft = st.session_state.draft_candidate
+    if draft is None:
+        return
+    st.session_state.started = True
+    st.session_state.answers = dict(draft["responses"])
+    st.session_state.response_uuid = draft["response_uuid"]
+    st.session_state.age_range = draft["age"]
+    district_option = district_option_for_draft(draft)
+    st.session_state.dem_district = district_option
+    st.session_state._dem_district = district_option
+    st.session_state.district_search = ""
+    st.session_state._district_search = ""
+    if district_option is None:
+        st.session_state.residence_region = None
+        st.session_state.residence_district = None
+    else:
+        st.session_state.residence_region = district_option.region
+        st.session_state.residence_district = district_option.district
+
+    step = draft["current_question"]
+    if step <= len(QUESTIONS):
+        st.session_state.current_question = step - 1
+        st.session_state.demographic_step = 0
+    else:
+        st.session_state.current_question = len(QUESTIONS) - 1
+        st.session_state.demographic_step = step - len(QUESTIONS)
+
+    st.session_state.demographic_record = {}
+    st.session_state.show_results = False
+    st.session_state.analysis_complete = False
+    st.session_state.completion_time_validated = False
+    st.session_state.invalid_completion = False
+    restore_questionnaire_timer(
+        st.session_state,
+        draft["elapsed_active_seconds"],
+    )
+    st.session_state.draft_candidate = None
+
+
+def clear_draft_for_outcome():
+    """Elimina el borrador una sola vez al terminar o invalidar el recorrido."""
+    if st.session_state.draft_cleared_for_outcome:
+        return
+    clear_draft()
+    st.session_state.draft_candidate = None
+    st.session_state.draft_last_serialized = None
+    st.session_state.draft_cleared_for_outcome = True
 
 
 def reset_questionnaire():
@@ -1217,8 +1371,11 @@ def reset_questionnaire():
     st.session_state.analysis_complete = False
     st.session_state.email_submitted = False
     st.session_state.email_save_message = ""
+    st.session_state.draft_checked = True
+    st.session_state.draft_cleared_for_outcome = False
     reset_submission(st.session_state)
     reset_response_quality(st.session_state)
+    queue_draft_clear()
 
 
 def start_own_questionnaire():
@@ -1382,7 +1539,43 @@ def render_cover():
             """,
             unsafe_allow_html=True,
         )
-        if st.button(
+        draft_candidate = st.session_state.draft_candidate
+        if draft_candidate is not None:
+            recovered_step = draft_candidate["current_question"]
+            if recovered_step <= len(QUESTIONS):
+                recovery_message = (
+                    "Recuperamos tu avance. Puedes continuar desde la pregunta "
+                    f"{recovered_step} de {len(QUESTIONS)}."
+                )
+            else:
+                recovery_message = (
+                    "Recuperamos tu avance. Puedes continuar con los datos finales."
+                )
+            with st.container(key="draft_recovery"):
+                st.markdown(
+                    f'<p class="draft-recovery-message">'
+                    f"{html.escape(recovery_message)}</p>",
+                    unsafe_allow_html=True,
+                )
+                continue_column, restart_column = st.columns(2, gap="small")
+                with continue_column:
+                    if st.button(
+                        "Continuar",
+                        type="primary",
+                        width="stretch",
+                        key="continue_draft",
+                    ):
+                        restore_browser_draft()
+                        st.rerun()
+                with restart_column:
+                    if st.button(
+                        "Empezar de nuevo",
+                        width="stretch",
+                        key="discard_draft",
+                    ):
+                        reset_questionnaire()
+                        st.rerun()
+        elif st.button(
             "Comenzar",
             type="primary",
             width="stretch",
@@ -1390,11 +1583,13 @@ def render_cover():
         ):
             st.session_state.started = True
             st.session_state.current_question = 0
+            start_questionnaire_timer(st.session_state)
+            mark_draft_activity()
             st.rerun()
         st.markdown(
             '<p class="privacy-note">'
-            "Tus respuestas se utilizan únicamente durante esta sesión para "
-            "calcular tu perfil."
+            "Tu avance puede conservarse de forma privada en este dispositivo "
+            "durante un máximo de 30 minutos."
             "</p>",
             unsafe_allow_html=True,
         )
@@ -1453,6 +1648,7 @@ def render_question():
                 width="stretch",
             ):
                 st.session_state.answers[question_id] = value
+                mark_draft_activity()
                 st.rerun()
 
         with st.container(key="navigation"):
@@ -1465,6 +1661,7 @@ def render_question():
                     key=f"back_{index}",
                 ):
                     st.session_state.current_question -= 1
+                    mark_draft_activity()
                     st.rerun()
 
             with next_column:
@@ -1486,9 +1683,11 @@ def render_question():
                             )
                         else:
                             st.session_state.demographic_step = 1
+                            mark_draft_activity()
                             st.rerun()
                     else:
                         st.session_state.current_question += 1
+                        mark_draft_activity()
                         st.rerun()
 
 
@@ -1545,6 +1744,7 @@ def render_age_range():
                 width="stretch",
             ):
                 st.session_state.age_range = age_range
+                mark_draft_activity()
                 st.rerun()
 
         if selected_age is None:
@@ -1560,6 +1760,7 @@ def render_age_range():
                 ):
                     st.session_state.demographic_step = 0
                     st.session_state.current_question = len(QUESTIONS) - 1
+                    mark_draft_activity()
                     st.rerun()
             with next_column:
                 if st.button(
@@ -1570,6 +1771,7 @@ def render_age_range():
                     key="next_demographic_age",
                 ):
                     st.session_state.demographic_step = 2
+                    mark_draft_activity()
                     st.rerun()
 
 
@@ -1585,6 +1787,7 @@ def persist_district_selection():
     if selected_option is not None:
         st.session_state.residence_region = selected_option.region
         st.session_state.residence_district = selected_option.district
+        mark_draft_activity()
 
 
 def render_district():
@@ -1650,6 +1853,7 @@ def render_district():
                     key="back_demographic_district",
                 ):
                     st.session_state.demographic_step = 1
+                    mark_draft_activity()
                     st.rerun()
             with next_column:
                 if st.button(
@@ -1666,6 +1870,8 @@ def render_district():
                     )
                     st.session_state.show_results = True
                     st.session_state.analysis_complete = False
+                    queue_draft_clear()
+                    st.session_state.draft_cleared_for_outcome = True
                     st.rerun()
 
 
@@ -2278,6 +2484,7 @@ def render_response_save_status(scores):
 
 def render_results():
     """Muestra el resultado antes de intentar su registro anónimo."""
+    clear_draft_for_outcome()
     if not can_persist_response(st.session_state):
         render_invalid_completion()
         return
@@ -2290,6 +2497,7 @@ def render_results():
 
 def render_invalid_completion():
     """Muestra exclusivamente el rechazo metodológico y un reinicio completo."""
+    clear_draft_for_outcome()
     st.error(INVALID_COMPLETION_MESSAGE)
     st.button(
         "Volver a completar el cuestionario",
@@ -2315,6 +2523,10 @@ def shared_result_from_query():
 initialize_state()
 
 shared_result = shared_result_from_query()
+
+if shared_result is None:
+    check_for_browser_draft()
+    flush_draft_storage_command()
 
 if shared_result is not None:
     render_result_report(shared_result, shared=True)

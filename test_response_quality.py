@@ -7,7 +7,9 @@ from response_quality import (
     INVALID_COMPLETION_MESSAGE,
     MINIMUM_COMPLETION_SECONDS,
     can_persist_response,
+    active_elapsed_seconds,
     reset_response_quality,
+    restore_questionnaire_timer,
     start_questionnaire_timer,
     validate_completion_time,
 )
@@ -19,6 +21,7 @@ APP_SOURCE = Path("app.py").read_text(encoding="utf-8")
 def fresh_state():
     return {
         "questionnaire_started_at": None,
+        "questionnaire_elapsed_active_seconds": 0.0,
         "completion_time_validated": False,
         "invalid_completion": False,
     }
@@ -77,6 +80,31 @@ def test_more_than_30_seconds_is_valid():
     with patch("response_quality.time.monotonic", return_value=145.0):
         assert validate_completion_time(state)
     assert can_persist_response(state)
+
+
+def test_restored_time_adds_only_the_new_monotonic_session_segment():
+    state = fresh_state()
+    with patch("response_quality.time.monotonic", return_value=500.0):
+        restore_questionnaire_timer(state, 18.5)
+    with patch("response_quality.time.monotonic", return_value=507.0):
+        assert active_elapsed_seconds(state) == 25.5
+
+
+def test_invalid_restored_time_falls_back_to_zero():
+    state = fresh_state()
+    with patch("response_quality.time.monotonic", return_value=500.0):
+        restore_questionnaire_timer(state, "corrupto")
+    with patch("response_quality.time.monotonic", return_value=505.0):
+        assert active_elapsed_seconds(state) == 5.0
+
+
+def test_restoration_does_not_bypass_the_30_second_minimum():
+    state = fresh_state()
+    with patch("response_quality.time.monotonic", return_value=100.0):
+        restore_questionnaire_timer(state, 20.0)
+    with patch("response_quality.time.monotonic", return_value=109.9):
+        assert not validate_completion_time(state)
+    assert not can_persist_response(state)
 
 
 def test_invalid_flow_executes_no_scoring_payload_or_storage_callback():
