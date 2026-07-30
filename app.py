@@ -140,6 +140,11 @@ st.markdown(
         padding-bottom: 4rem;
     }
 
+    [data-testid="stSidebar"],
+    [data-testid="stExpandSidebarButton"] {
+        display: none !important;
+    }
+
     [class*="st-key-cover_card"],
     [class*="st-key-question_card_"],
     [class*="st-key-analysis_card"] {
@@ -294,6 +299,59 @@ st.markdown(
         font-size: 0.72rem;
         line-height: 1.4;
         text-align: center;
+    }
+
+    [class*="st-key-legal_links"] {
+        width: min(100%, 680px);
+        margin: 0.85rem auto 0;
+    }
+
+    [class*="st-key-legal_links"] [data-testid="stHorizontalBlock"] {
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+    }
+
+    [class*="st-key-legal_links"] [data-testid="stColumn"] {
+        flex: 0 1 auto !important;
+        width: auto !important;
+        min-width: 0;
+    }
+
+    [class*="st-key-legal_links"] [data-testid="stPageLink"] {
+        display: flex;
+        justify-content: center;
+    }
+
+    [class*="st-key-legal_links"] [data-testid="stPageLink"] a {
+        min-height: auto;
+        padding: 0.18rem 0.35rem;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        color: #5b6b82 !important;
+        font-size: 0.76rem;
+        line-height: 1.35;
+        text-align: center;
+        text-decoration: underline;
+        text-decoration-color: rgba(91, 107, 130, 0.55);
+        text-underline-offset: 0.18em;
+        opacity: 1;
+    }
+
+    [class*="st-key-legal_links"] [data-testid="stPageLink"] a p {
+        margin: 0;
+        color: #5b6b82 !important;
+        font-size: inherit;
+        line-height: inherit;
+        opacity: 1 !important;
+    }
+
+    [class*="st-key-legal_links"] [data-testid="stPageLink"] a:hover,
+    [class*="st-key-legal_links"] [data-testid="stPageLink"] a:hover p {
+        background: transparent;
+        color: #1f4e9e !important;
+        text-decoration-color: currentColor;
     }
 
     [class*="st-key-draft_recovery"] {
@@ -1593,6 +1651,20 @@ def render_cover():
             "</p>",
             unsafe_allow_html=True,
         )
+        with st.container(key="legal_links"):
+            terms_column, consent_column = st.columns(2, gap="small")
+            with terms_column:
+                st.page_link(
+                    "pages/01_Terminos_Privacidad_Metodologia.py",
+                    label="Términos de Uso, Privacidad y Metodología",
+                    width="content",
+                )
+            with consent_column:
+                st.page_link(
+                    "pages/02_Consentimiento_de_Participacion.py",
+                    label="Consentimiento de Participación",
+                    width="content",
+                )
         st.markdown(
             '<p class="instrument-version">'
             f"{html.escape(instrument_version.instrument_version_display_text())}"
